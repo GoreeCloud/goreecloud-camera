@@ -1,22 +1,38 @@
 # GoreeCloud Camera — User Manual
 
-> Repository document version: **0.1.0**  
+> Repository document version: **0.2.0**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**  
-> Manual status: **Pre-implementation**
+> Manual status: **Engineering preview foundation**
 
 ## Current availability
 
-There is currently **no installable or runnable GoreeCloud Camera application** in this repository. There are therefore no valid installation, launch, capture, settings, or troubleshooting steps to give end users yet.
+The repository now contains a buildable Android foundation and CI can produce a debug APK when validation succeeds. This is **not a supported release** and no device is yet qualified.
 
-This file keeps the required repository user-manual surface truthful while implementation is still at Concept stage. It must be expanded only when a real build and verified user workflow exist.
+## Current engineering workflow
 
-## Planned user experience
+1. Build the exact repository revision with JDK 17, Gradle 9.6.0, Android SDK 37, and AGP 9.4.0.
+2. Install the generated debug APK only on a test device or emulator appropriate for development work.
+3. Launch **GoreeCloud Camera**.
+4. Grant the Android camera permission when prompted.
+5. The engineering shell attempts to select a rear camera and start a Camera2 live preview.
+6. Leaving the activity closes the active preview session and camera device.
 
-The planned product is intended to provide Photo/Video capture; Portrait, Night, Pro, Creative, and additional supported modes; quick controls; privacy/metadata controls; Private Capture; scanning and QR/barcode recognition; creator/multi-camera workflows; clear microphone/location/recording/privacy/thermal state; and optional downstream handoff to GoreeCloud Gallery and Photos.
+## Current limitations
+
+There is no shutter control, still-image persistence, video/audio recording, MediaStore finalization, zoom/focus UI, Glaze UI implementation, Private Capture, Gallery/Photos handoff, or production signing. The current interface is intentionally an engineering shell.
+
+The app currently requests only the camera permission. It does not request Internet, location, microphone, or media-library permissions.
+
+## Troubleshooting
+
+- If camera permission is denied, use the on-screen permission button and Android permission controls.
+- If no camera is reported, the engineering shell displays that state rather than inventing support.
+- A buildable APK is not evidence that preview behavior is qualified on the device.
+- Camera or session errors are displayed as engineering status text; detailed privacy-safe diagnostics are future work.
 
 ## Future manual requirements
 
-When implementation exists, document only verified supported devices/OS versions, installation, permissions, capture, storage, privacy/metadata, Private Capture, professional/creative modes, qualified external accessories/storage, accessibility, interrupted-recording recovery, downstream behavior, troubleshooting, and limitations.
+As capabilities become verified, document only supported devices/OS versions, capture, storage, metadata/privacy, Private Capture, professional/creative modes, qualified accessories/storage, accessibility, interrupted-recording recovery, downstream behavior, and known limitations.
 
 A central GoreeCloud User Manuals copy has not yet been verified for Camera and remains a documentation follow-up item.

@@ -1,27 +1,29 @@
 # GoreeCloud Camera — Privacy Policy
 
-> Repository document version: **0.1.0**  
+> Repository document version: **0.2.0**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**  
-> Runtime privacy status: **Not yet implemented**
+> Runtime privacy status: **Narrow source-level foundation; Privacy Shield acceptance pending**
 
-## Current repository state
+## Current implemented boundary
 
-This repository does not currently contain a runnable Camera application. Therefore no GoreeCloud Camera runtime collection, telemetry, camera-frame processing, metadata storage, upload behavior, or account behavior is currently implemented by this repository.
+The Android foundation requests only `android.permission.CAMERA`. The manifest does **not** request Internet, location, microphone, or media-library permissions.
 
-The requirements below define the planned privacy baseline and must not be presented as completed controls until implementation and acceptance evidence exists.
+The current Camera2 implementation displays preview frames to the application viewfinder. It does not implement still/video persistence, frame upload, networking, account behavior, location metadata, microphone capture, media-library reads, or downstream synchronization.
 
-## Planned privacy commitments
+These source-level restrictions are useful privacy boundaries but do not constitute Privacy Shield runtime acceptance or real-device validation.
+
+## Core privacy commitments
 
 Core photography and video capture must not require an Internet connection, GoreeCloud account, GoreeCloud Photos server, commercial cloud service, or external AI service.
 
 ## Camera frames
 
-Viewfinder and analysis frames should be ephemeral by default. They must not be retained, logged, uploaded, or exposed to extensions merely because preview or analysis is active.
+Viewfinder and analysis frames should be ephemeral by default. They must not be retained, logged, uploaded, or exposed to extensions merely because preview or analysis is active. The current foundation does not contain a frame-persistence path.
 
 ## Metadata
 
-Users should be able to control sensitive capture metadata, including location and selected device/software information. Planned export policies include **Original**, **Privacy Safe**, and **Custom**.
+Users should be able to control sensitive capture metadata, including location and selected device/software information. Planned export policies include **Original**, **Privacy Safe**, and **Custom**. Metadata capture is not yet implemented.
 
 ## Private Capture
 
@@ -41,7 +43,7 @@ Gallery, Photos, Everkeep, Sync, or other GoreeCloud services must not receive m
 
 ## Privacy Shield
 
-Privacy Shield is the planned authority for applicable Camera privacy contracts. No Camera-specific Privacy Shield runtime acceptance exists at the Concept baseline.
+Privacy Shield remains the planned authority for applicable Camera privacy contracts. No Camera-specific Privacy Shield runtime acceptance exists at this Concept-stage foundation.
 
 ## Changes
 

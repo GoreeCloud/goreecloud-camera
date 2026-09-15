@@ -25,32 +25,32 @@ platform_systems:
     result: applicable-blocked
     version: null
     evidence: []
-    notes: "No GoreeCloud Manager integration is implemented or accepted at Concept stage."
+    notes: "No GoreeCloud Manager integration is implemented or accepted in the Camera foundation."
   privacy_shield:
     result: applicable-blocked
     version: null
     evidence: []
-    notes: "Privacy Shield behavior is specified but no Camera runtime integration or acceptance evidence exists."
+    notes: "The foundation source deliberately requests only camera permission and has no network, location, audio, or media-library permission; Privacy Shield runtime integration is still unimplemented and unaccepted."
   wardveil_security:
     result: applicable-blocked
     version: null
     evidence: []
-    notes: "Wardveil Security boundaries are specified but no Camera runtime integration or acceptance evidence exists."
+    notes: "Camera session ownership is centralized in the initial controller source, but Wardveil Security runtime integration and acceptance do not yet exist."
   everkeep:
     result: applicable-blocked
     version: null
     evidence: []
-    notes: "Everkeep portability and preservation requirements are specified but no runtime integration evidence exists."
+    notes: "No media finalization, portability evidence, or Everkeep runtime integration exists yet."
   glaze_ui:
     result: applicable-blocked
     version: null
     evidence: []
-    notes: "Glaze UI 1.4.1 is the current required consumer target; no Camera UI implementation or acceptance evidence exists."
+    notes: "Glaze UI 1.4.1 remains the required consumer target; the current engineering preview shell intentionally does not claim Glaze UI conformance."
   mesh:
     result: applicable-blocked
     version: null
     evidence: []
-    notes: "Mesh coordination is planned for applicable first-party interactions such as future remote or integration workflows; no implementation evidence exists."
+    notes: "No Mesh coordination is implemented; remote and cross-device workflows remain future work."
     capabilities: []
     dependencies: []
     published_events: []
@@ -59,7 +59,7 @@ platform_systems:
     result: applicable-blocked
     version: null
     evidence: []
-    notes: "Core local capture must not require identity; identity-bound optional features are planned but no implementation or acceptance evidence exists."
+    notes: "Core local preview does not require identity; optional identity-bound workflows remain unimplemented and unaccepted."
 
 health:
   health_endpoint: null
@@ -77,12 +77,12 @@ continuity:
   export:
     required: true
     requirements:
-      - "Captured media must remain exportable as ordinary user-owned files."
+      - "Captured media must remain exportable as ordinary user-owned files once still/video persistence is implemented."
       - "Metadata export must support privacy-aware policies when implemented."
   portability:
     required: true
     requirements:
-      - "Primary media must remain usable without GoreeCloud Camera."
+      - "Primary media must remain usable without GoreeCloud Camera once media capture is implemented."
       - "RAW, Motion Photo relationships, sidecars, and provenance data must remain portable when those features are implemented."
 
 external_dependencies: []
@@ -102,8 +102,8 @@ conformance:
   validated_at: null
   evidence: []
   blockers:
-    - "No Camera application source or runnable build is yet verified."
+    - "No supported real-device Camera preview qualification evidence exists."
+    - "No still-photo or video media persistence/finalization is implemented."
     - "No Platform System integration acceptance evidence exists."
-    - "No supported real-device qualification evidence exists."
     - "No release or production-acceptance evidence exists."
     - "A recognized open-source repository license has not yet been selected."

@@ -1,6 +1,6 @@
 # GoreeCloud Camera — Feature Roadmap
 
-> Repository document version: **0.1.0**  
+> Repository document version: **0.2.0**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**  
 > Canonical Drive roadmap: **FEATURE-ROADMAP.docx v1.1**
@@ -14,29 +14,34 @@ GoreeCloud Camera is planned as one native application combining **Professional 
 ## Delivery sequence
 
 ### Phase 0 — Governance and architecture baseline
-Status: **In progress**
+Status: **Substantially complete; licensing blocker remains**
 
-- canonical Drive roadmap and project specification;
-- repository documentation baseline;
-- product version identity;
-- Platform Contract 0.2 declaration;
-- current lifecycle classification;
-- unresolved licensing decision.
-
-Completion does not promote the product beyond Concept.
+Completed repository work includes the canonical Drive roadmap/project specification, repository documentation baseline, product version identity, Platform Contract 0.2 declaration, current lifecycle classification, and exact-revision Platform Contract validation. A recognized repository license remains unresolved.
 
 ### Phase 1 — Native Android capture foundation
-Status: **Planned**
+Status: **In progress**
+
+Implemented in source in this milestone:
 
 - real Android/Gradle project;
-- app identity and version metadata;
+- canonical app identity and version metadata;
+- Android 17/API 37 compile and target baseline;
+- provisional API 29 minimum SDK;
 - camera permission flow;
-- lifecycle-safe viewfinder;
+- lifecycle-owned viewfinder host;
 - camera enumeration and Capability Registry;
-- session controller;
-- basic Photo and Video capture;
+- deterministic default-camera selection;
+- Camera2 preview session controller;
+- initial unit/static tests and Android CI.
+
+Still required to complete Phase 1:
+
+- verified runtime preview on representative device/emulator;
+- basic still Photo capture;
+- basic Video capture;
 - MediaStore finalization;
-- local settings and initial tests.
+- local settings foundation;
+- initial device support/qualification record.
 
 ### Phase 2 — Capture reliability and device qualification
 Status: **Planned**
