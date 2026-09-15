@@ -1,4 +1,4 @@
-# File internal version: 0.2.1
+# File internal version: 0.3.0
 name: Android Foundation
 
 on:
@@ -203,65 +203,12 @@ jobs:
           profile: pixel_5
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back emulated -camera-front none
-          script: |
-            set -eu
-            gradle --no-daemon --stacktrace assembleDebug
-            APK="$(find app/build/outputs/apk/debug -type f -name '*.apk' -print -quit)"
-            test -n "$APK"
-
-            adb install -r "$APK"
-            adb shell pm grant com.goreecloud.camera android.permission.CAMERA
-            adb shell am force-stop com.goreecloud.camera
-            adb shell input keyevent KEYCODE_WAKEUP || true
-            adb shell wm dismiss-keyguard || true
-            adb shell am start -W -n com.goreecloud.camera/.MainActivity
-
-            EVIDENCE_ROOT="runtime-preview-evidence"
-            rm -rf "$EVIDENCE_ROOT"
-            mkdir -p "$EVIDENCE_ROOT"
-
-            preview_ready=0
-            for attempt in $(seq 1 30); do
-              adb shell uiautomator dump /sdcard/goreecloud-camera-window.xml >/dev/null 2>&1 || true
-              adb pull /sdcard/goreecloud-camera-window.xml "$EVIDENCE_ROOT/window.xml" >/dev/null 2>&1 || true
-              if grep -q 'text="Session: previewing' "$EVIDENCE_ROOT/window.xml" 2>/dev/null; then
-                preview_ready=1
-                break
-              fi
-              sleep 1
-            done
-
-            adb exec-out screencap -p > "$EVIDENCE_ROOT/preview.png" || true
-            adb shell dumpsys media.camera > "$EVIDENCE_ROOT/media-camera.txt" || true
-            adb logcat -d -v threadtime > "$EVIDENCE_ROOT/logcat.txt" || true
-
-            cat > "$EVIDENCE_ROOT/RUNTIME-PROVENANCE.txt" <<PROVENANCE
-            repository=GoreeCloud/goreecloud-camera
-            source_sha=$SOURCE_SHA
-            product_version=0.1.0
-            lifecycle=Concept
-            runtime=Android-16-API-36-emulator
-            camera_source=Android-emulated-back-camera
-            permission_scope=android.permission.CAMERA-only
-            expected_runtime_state=previewing
-            evidence_role=representative-emulator-preview-qualification
-            physical_device_qualification=false
-            stable_release_authority=none
-            PROVENANCE
-
-            if [ "$preview_ready" -ne 1 ]; then
-              echo "Camera preview did not reach PREVIEWING state." >&2
-              cat "$EVIDENCE_ROOT/window.xml" >&2 2>/dev/null || true
-              exit 1
-            fi
-
-            grep -Eq 'text="Detected camera devices: [1-9][0-9]*"' "$EVIDENCE_ROOT/window.xml"
-            echo "Camera2 preview reached PREVIEWING on the Android 16 emulated camera runtime."
+          script: bash scripts/qualify_preview_runtime.sh
 
       - name: Upload runtime preview evidence
         if: always()
         uses: actions/upload-artifact@v6
         with:
           name: goreecloud-camera-runtime-preview
-          if-no-files-found: warn
+          if-no-files-found: error
           path: runtime-preview-evidence/*
