@@ -1,6 +1,6 @@
 # GoreeCloud Camera — Repository Specifications
 
-> Repository document version: **0.2.1**  
+> Repository document version: **0.2.2**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**  
 > Repository: `GoreeCloud/goreecloud-camera`
@@ -9,11 +9,11 @@
 
 GoreeCloud Camera is the GoreeCloud-owned mobile capture application for still photography, video, scanning, creative capture, computational imaging, visual utilities, and privacy-controlled acquisition of source media.
 
-This repository now contains the **first native Android implementation foundation**. The implementation is deliberately narrow: it establishes application identity, Android build configuration, runtime camera permission handling, Camera2 preview-session ownership, camera capability discovery, deterministic default-camera selection, lifecycle cleanup, initial unit tests, and exact-revision CI. It does **not** yet establish usable photo/video capture, media persistence, device qualification, or accepted GoreeCloud Platform System integration.
+This repository contains the **first native Android implementation foundation** and a verified representative Android-emulator preview path. The implementation is deliberately narrow: it establishes application identity, Android build configuration, runtime camera permission handling, Camera2 preview-session ownership, camera capability discovery, deterministic default-camera selection, lifecycle cleanup, initial unit tests, exact-revision CI, and repeatable Android 16 virtual-camera preview qualification. It does **not** yet establish usable photo/video capture, media persistence, physical-device qualification, or accepted GoreeCloud Platform System integration.
 
-The release lifecycle therefore remains **Concept**. Source presence and a buildable engineering shell do not by themselves establish an Experimental prototype suitable for lifecycle promotion; that transition requires runtime evidence from an actual Android execution environment.
+The release lifecycle remains **Concept**. Representative runtime evidence is necessary implementation evidence, but it is not by itself a lifecycle promotion. Promotion must be evaluated separately against the authoritative lifecycle standard and the actual maturity of usable capture, persistence, device support, and acceptance evidence.
 
-The canonical Drive project specification is `GoreeCloud/Projects/Project Specification — Camera.md` v0.3. The repository `FEATURE-ROADMAP.md` is the canonical editable roadmap source; `GoreeCloud/Feature Roadmap/GoreeCloud Camera/FEATURE-ROADMAP.md` v1.2 is its synchronized Drive representation. This file is the repository-coupled technical specification and must remain materially synchronized with the Drive project specification and roadmap state.
+The canonical Drive project specification is `GoreeCloud/Projects/Project Specification — Camera.md`. The repository `FEATURE-ROADMAP.md` is the canonical editable roadmap source; `GoreeCloud/Feature Roadmap/GoreeCloud Camera/FEATURE-ROADMAP.md` is its synchronized Drive representation. This file is the repository-coupled technical specification and must remain materially synchronized with the Drive project specification and roadmap state.
 
 ## 2. Verified current implementation state
 
@@ -34,16 +34,21 @@ The current foundation introduces the following repository implementation state:
 - A deterministic selector prefers back, external, front, then unknown-facing cameras.
 - Initial unit tests cover deterministic camera selection.
 - Static source-contract validation and Android CI are defined for exact candidate revisions.
-- Pull request #2 was squash-merged to authoritative `main` as signed commit `8de1eac6693f09ef52b0f12886108727352404e1`.
-- That exact merged commit passed push-triggered Android Foundation run `35017167769` and Platform Contract run `35017168819`.
+- Pull request #2 was squash-merged to authoritative `main` as signed commit `8de1eac6693f09ef52b0f12886108727352404e1`, establishing the native Android source foundation.
+- Pull request #4, **“Qualify Camera2 preview on Android emulator,”** was squash-merged to authoritative `main` as signed commit `6dbd2c1a5c5e3fb523662f5a6e181c6dbf73644a`.
+- Exact PR #4 candidate `cdc59289c607558090c298ee74ae2829268920c1` passed Android Foundation run `35020668795`, including the Android 16 virtual-camera preview qualification job, and Platform Contract run `35020668711`.
+- Authoritative merge commit `6dbd2c1a5c5e3fb523662f5a6e181c6dbf73644a` passed push-triggered Android Foundation run `35021425774`, including the same runtime preview qualification, and Platform Contract run `35021428000`.
+- The post-merge runtime evidence artifact `goreecloud-camera-runtime-preview` is tied to the authoritative merge SHA and has recorded digest `sha256:3212d9b32d719f08fc856e2845b043bc6f0aecf23d3c060a3ed60c23e7b79926`.
+- The representative Android 16/API 36 emulator used an emulated back camera and reached `Session: previewing` with one detected virtual camera while only CAMERA permission was granted.
+- Runtime evidence includes UI hierarchy, screenshot, CameraService state, package/app-ops state, logcat, and provenance; it explicitly records `physical_device_qualification=false` and no Stable release authority.
 
 Not yet verified or implemented:
 
-- successful preview execution on a real device or emulator with camera hardware;
+- successful preview qualification on a representative physical phone;
 - still-image capture or MediaStore finalization;
 - video/audio recording;
 - camera switching and user-facing mode controls;
-- device qualification or Camera-specific hardware profiles;
+- physical-device qualification or Camera-specific hardware profiles/quirk records;
 - local settings persistence;
 - production signing or packaged release;
 - accepted Glaze UI, Privacy Shield, Wardveil Security, Everkeep, Manager, Mesh, or Identity runtime integration;
@@ -76,7 +81,7 @@ The first implementation is a native Android application using Kotlin and standa
 - Java source/target compatibility `17`
 - Android application ID `com.goreecloud.camera`
 
-The strategic platform target follows GoreeCloud OS Mobile: Android 17 / API 37. The current physical GoreeCloud OS Mobile qualification baseline remains separately governed and does not automatically qualify Camera.
+The strategic platform target follows GoreeCloud OS Mobile: Android 17 / API 37. The Android 16/API 36 emulator qualification is representative runtime evidence only; the current physical GoreeCloud OS Mobile qualification baseline remains separately governed and does not automatically qualify Camera.
 
 ### 4.2 Camera framework strategy
 
@@ -112,9 +117,9 @@ No media is persisted by the current foundation, so recovery/finalization behavi
 
 ## 6. Major components and implementation status
 
-- **Camera Session Controller — Foundation implemented.** Owns Camera2 lifecycle, device/session resources, preview start/stop, and shutdown.
+- **Camera Session Controller — Foundation implemented and representative-emulator qualified.** Owns Camera2 lifecycle, device/session resources, preview start/stop, and shutdown. The Android 16 virtual-camera path reached PREVIEWING; physical-device qualification remains open.
 - **Capability Registry — Foundation implemented.** Enumerates Camera2 capability facts and preview sizes.
-- **Preview Engine — Foundation implemented.** `TextureView` host plus Camera2 repeating preview request; runtime qualification still pending.
+- **Preview Engine — Foundation implemented and representative-emulator qualified.** `TextureView` host plus Camera2 repeating preview request; physical-device and performance qualification remain pending.
 - **Camera Selector — Foundation implemented.** Deterministic default-camera selection.
 - **Photo Capture Engine — Planned.** Still capture, burst, RAW, computational pipelines, and finalization.
 - **Video Capture Engine — Planned.** Video/audio capture, encoding, stabilization configuration, monitoring, and recording recovery.
@@ -142,7 +147,7 @@ The canonical Feature Roadmap defines detailed planned feature scope. Major fami
 - Private Capture and metadata controls.
 - Deep but non-mandatory Gallery/Photos/Everkeep integration.
 
-The current implementation provides only the Android application shell, permission flow, capability discovery, camera selection, and preview-session foundation. All user-facing capture modes remain planned until verified implementation evidence reclassifies them.
+The current implementation provides the Android application shell, permission flow, capability discovery, camera selection, preview-session foundation, and representative Android-emulator preview qualification. User-facing capture modes remain planned until verified implementation evidence reclassifies them.
 
 ## 8. Data and storage
 
@@ -189,7 +194,7 @@ The foundation intentionally does **not** request:
 - `android.permission.RECORD_AUDIO`;
 - media-library read permissions.
 
-The current preview pipeline does not persist camera frames, upload content, record audio, read location, or access an existing media library. These are current source-level facts, not Privacy Shield acceptance evidence.
+The qualified preview pipeline does not persist camera frames, upload content, record audio, read location, or access an existing media library. Runtime qualification granted only CAMERA permission. These are current implementation/evidence facts, not Privacy Shield acceptance evidence.
 
 ### 11.2 Future privacy requirements
 
@@ -211,6 +216,7 @@ The current preview pipeline does not persist camera frames, upload content, rec
 - Camera/session/surface resources are closed on activity pause, surface loss, stop, and shutdown paths.
 - The application disallows cleartext network traffic even though the foundation currently has no Internet permission.
 - Android backup is disabled for this engineering foundation.
+- Exact-revision runtime qualification records package/app-ops state and CameraService evidence without granting broader runtime permission authority.
 
 These controls do not constitute Wardveil Security acceptance.
 
@@ -236,7 +242,7 @@ All seven remain **applicable-blocked** at this milestone because application-sp
 6. GoreeCloud Mesh
 7. GoreeCloud Identity
 
-The source foundation is relevant evidence of implementation progress but does not satisfy Platform System conformance on its own.
+The preview-runtime evidence is relevant Camera implementation evidence but does not satisfy any Platform System acceptance contract on its own.
 
 GoreeCloud Sync is separately governed and must not appear as an eighth `platform_systems` key. If Camera later uses Sync, synchronization authorization, datasets, version/change model, conflicts, replication, offline resume, and cross-device behavior must be documented separately.
 
@@ -252,7 +258,7 @@ Accessibility acceptance requires real implementation and device validation.
 
 Performance budgets are qualification targets, not current claims. Real-device testing must establish thresholds for launch, preview readiness, shutter responsiveness, lens switching, sustained recording, memory/thermal behavior, storage exhaustion, battery-critical finalization, and interrupted-session recovery.
 
-The current session controller explicitly closes resources across activity/surface lifecycle transitions, but no performance or recovery qualification has been performed.
+The current session controller explicitly closes resources across activity/surface lifecycle transitions, and the representative emulator path has verified a successful open/configure/repeating-preview flow. No physical-device performance or recovery qualification has been performed.
 
 Correctness, media integrity, privacy, security, and thermal sustainability take precedence over headline latency.
 
@@ -265,9 +271,10 @@ The current implementation deliberately minimizes dependencies:
 - Android platform/framework APIs for runtime behavior;
 - Android Gradle Plugin 9.4.0 as build tooling;
 - Gradle 9.6.0 in CI;
-- JUnit 4.13.2 for local unit testing.
+- JUnit 4.13.2 for local unit testing;
+- pinned `reactivecircus/android-emulator-runner` only as CI/runtime-qualification tooling, not as an application runtime dependency.
 
-There is no third-party runtime camera library, hosted SDK, telemetry SDK, networking SDK, account SDK, or proprietary control-plane dependency in the foundation.
+There is no third-party runtime camera library, hosted SDK, telemetry SDK, networking SDK, account SDK, or proprietary control-plane dependency in the application foundation.
 
 Future dependencies must remain limited to justified open-source or platform foundations. Core operation must not depend on proprietary hosted control planes, vendor accounts, or commercial cloud processing.
 
@@ -277,9 +284,11 @@ Tracked configuration must contain no reusable secrets. User preferences, device
 
 The current engineering shell exposes non-persistent session state and a coarse camera-count capability summary to aid bring-up. No telemetry or remote diagnostics are implemented.
 
+CI runtime qualification captures local disposable-emulator evidence including UI hierarchy, screenshot, CameraService state, package/app-ops state, logcat, and provenance. This evidence is qualification output rather than product telemetry and is tied to an exact source revision.
+
 Future diagnostics may record privacy-safe structured events such as session lifecycle, mode, capability decisions, encoder configuration, thermal/storage state classes, error codes, recovery outcomes, and timing metrics.
 
-Ordinary diagnostics must not contain raw camera frames, recognized faces, OCR content, precise location, microphone payloads, or captured media.
+Ordinary diagnostics must not contain raw camera frames, recognized faces, OCR content, precise location, microphone payloads, or captured user media.
 
 ## 18. Testing and validation
 
@@ -289,11 +298,13 @@ Current repository validation includes:
 - local pure-Kotlin unit tests for deterministic camera selection;
 - Android lint, unit tests, and debug APK assembly in exact-revision CI;
 - Platform Contract validation through the repository's pinned reusable contract workflow;
-- post-merge exact-main Android Foundation run `35017167769` and Platform Contract run `35017168819`, both successful for commit `8de1eac6693f09ef52b0f12886108727352404e1`.
+- an exact-revision Android 16/API 36 emulator job with an emulated back camera that installs the APK, grants only CAMERA permission, launches the app, requires `Session: previewing`, requires a detected camera, and preserves local runtime evidence;
+- successful exact PR #4 candidate validation in Android Foundation run `35020668795` and Platform Contract run `35020668711` for `cdc59289c607558090c298ee74ae2829268920c1`;
+- successful post-merge exact-main Android Foundation run `35021425774` and Platform Contract run `35021428000` for `6dbd2c1a5c5e3fb523662f5a6e181c6dbf73644a`.
 
-Passing source/build validation proves only those checks. It does not prove camera preview works on supported hardware.
+Passing the representative emulator qualification proves the configured virtual-camera preview path for those exact revisions. It does not prove physical-device support, OEM camera behavior, media persistence, still/video capture, production UI quality, or production acceptance.
 
-Future validation must cover instrumentation tests, fake pipeline tests where useful, representative emulator/runtime checks, real-device qualification, media integrity, process death, camera-service restart, lock/unlock, storage exhaustion, thermal escalation, microphone route changes, runtime permission revocation, Lens isolation, Remote Viewfinder disconnect, accessibility, privacy, security, and platform integration acceptance.
+Future validation must cover instrumentation tests, fake pipeline tests where useful, physical-device qualification, media integrity, process death, camera-service restart, lock/unlock, storage exhaustion, thermal escalation, microphone route changes, runtime permission revocation, Lens isolation, Remote Viewfinder disconnect, accessibility, privacy, security, and platform integration acceptance.
 
 ## 19. Production acceptance
 
@@ -307,7 +318,7 @@ Open decisions include:
 
 - final minimum Android/API support baseline beyond the provisional `minSdk 29` engineering baseline;
 - whether selected future subsystems should use higher-level Android camera abstractions while Camera2 remains the advanced-control/session foundation;
-- first real-device qualification list and tier model;
+- first physical-device qualification list and tier model;
 - still-capture and MediaStore finalization design;
 - Motion Photo representation;
 - codec/HDR and recording matrix;
@@ -320,14 +331,15 @@ Open decisions include:
 
 ## 21. Immediate next engineering milestone
 
-With the native Android foundation merged and build-verified on authoritative `main`, the next milestone is to prove the camera path in a representative Android runtime and implement the first real **Photo capture** path:
+With the Camera2 preview path now verified on a representative Android 16/API 36 virtual-camera runtime and revalidated on authoritative `main`, the next bounded milestone is the first real **Photo capture + MediaStore finalization** path:
 
-1. run/qualify the preview and lifecycle controller on a representative emulator or device with camera support;
-2. add a still-capture request and image output path;
-3. stage and atomically finalize the image into MediaStore;
-4. verify capture completion and failure handling;
-5. add automated tests around output selection/state transitions where feasible;
-6. record device/runtime evidence without overstating support;
-7. keep location, networking, audio, and media-library authority absent until a feature actually requires and justifies it.
+1. add a still JPEG capture request/output path behind the existing single camera-session authority;
+2. create a pending MediaStore image destination using Android 10+ scoped-storage behavior without adding storage read permission;
+3. write the captured JPEG fully, publish the MediaStore row only after successful completion, and delete the pending row on failure;
+4. expose only an engineering-stage shutter/status surface while production Glaze UI remains separately unaccepted;
+5. extend exact-revision runtime qualification to trigger one capture and verify the resulting MediaStore artifact on the disposable emulator;
+6. add automated tests for deterministic file naming, destination/failure state, and capture-state transitions where practical;
+7. preserve the current absence of Internet, location, microphone, and media-library read permissions until a future feature actually requires and justifies them;
+8. retain separate physical-device/device-profile qualification as an open gate rather than inferring hardware support from the emulator.
 
-Lifecycle promotion from Concept must be evaluated separately after runtime evidence exists; it must not be inferred from the presence of source code or a CI-built APK.
+Lifecycle promotion from Concept must be evaluated separately under the authoritative release-lifecycle standard after the next usable capture milestone and associated evidence; it must not be inferred automatically from emulator preview qualification.
