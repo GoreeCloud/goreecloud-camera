@@ -1,4 +1,4 @@
-# File internal version: 0.2.0
+# File internal version: 0.2.1
 name: Android Foundation
 
 on:
@@ -204,7 +204,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back emulated -camera-front none
           script: |
-            set -euo pipefail
+            set -eu
             gradle --no-daemon --stacktrace assembleDebug
             APK="$(find app/build/outputs/apk/debug -type f -name '*.apk' -print -quit)"
             test -n "$APK"
