@@ -1,6 +1,6 @@
 # GoreeCloud Camera — Repository Specifications
 
-> Repository document version: **0.2.0**  
+> Repository document version: **0.2.1**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**  
 > Repository: `GoreeCloud/goreecloud-camera`
@@ -13,7 +13,7 @@ This repository now contains the **first native Android implementation foundatio
 
 The release lifecycle therefore remains **Concept**. Source presence and a buildable engineering shell do not by themselves establish an Experimental prototype suitable for lifecycle promotion; that transition requires runtime evidence from an actual Android execution environment.
 
-The canonical Drive project specification is `GoreeCloud/Projects/Project Specification — Camera.docx`. The canonical planned-feature record is `GoreeCloud/Feature Roadmap/GoreeCloud Camera/FEATURE-ROADMAP.docx`. This file is the repository-coupled technical specification and must remain materially synchronized with those records.
+The canonical Drive project specification is `GoreeCloud/Projects/Project Specification — Camera.md` v0.3. The repository `FEATURE-ROADMAP.md` is the canonical editable roadmap source; `GoreeCloud/Feature Roadmap/GoreeCloud Camera/FEATURE-ROADMAP.md` v1.2 is its synchronized Drive representation. This file is the repository-coupled technical specification and must remain materially synchronized with the Drive project specification and roadmap state.
 
 ## 2. Verified current implementation state
 
@@ -34,6 +34,8 @@ The current foundation introduces the following repository implementation state:
 - A deterministic selector prefers back, external, front, then unknown-facing cameras.
 - Initial unit tests cover deterministic camera selection.
 - Static source-contract validation and Android CI are defined for exact candidate revisions.
+- Pull request #2 was squash-merged to authoritative `main` as signed commit `8de1eac6693f09ef52b0f12886108727352404e1`.
+- That exact merged commit passed push-triggered Android Foundation run `35017167769` and Platform Contract run `35017168819`.
 
 Not yet verified or implemented:
 
@@ -286,7 +288,8 @@ Current repository validation includes:
 - static source-contract validation of application ID, API levels, product version, AGP pin, lifecycle declaration, required foundation files, camera permission, and absence of additional sensitive permissions;
 - local pure-Kotlin unit tests for deterministic camera selection;
 - Android lint, unit tests, and debug APK assembly in exact-revision CI;
-- Platform Contract validation through the repository's pinned reusable contract workflow.
+- Platform Contract validation through the repository's pinned reusable contract workflow;
+- post-merge exact-main Android Foundation run `35017167769` and Platform Contract run `35017168819`, both successful for commit `8de1eac6693f09ef52b0f12886108727352404e1`.
 
 Passing source/build validation proves only those checks. It does not prove camera preview works on supported hardware.
 
@@ -317,7 +320,7 @@ Open decisions include:
 
 ## 21. Immediate next engineering milestone
 
-After this foundation passes repository CI and is merged, the next milestone is to prove the camera path in a representative Android runtime and implement the first real **Photo capture** path:
+With the native Android foundation merged and build-verified on authoritative `main`, the next milestone is to prove the camera path in a representative Android runtime and implement the first real **Photo capture** path:
 
 1. run/qualify the preview and lifecycle controller on a representative emulator or device with camera support;
 2. add a still-capture request and image output path;

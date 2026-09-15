@@ -1,11 +1,13 @@
 # GoreeCloud Camera — Feature Roadmap
 
-> Repository document version: **0.2.0**  
+> Repository document version: **0.2.1**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**  
-> Canonical Drive roadmap: **FEATURE-ROADMAP.docx v1.1**
+> Drive synchronized representation: **GoreeCloud/Feature Roadmap/GoreeCloud Camera/FEATURE-ROADMAP.md v1.2**
 
-All items are **planned unless explicitly reclassified by verified implementation evidence**. This is a repository-coupled summary of the canonical Drive roadmap and must remain materially synchronized with it.
+The repository `FEATURE-ROADMAP.md` is the **canonical editable roadmap source** under current GoreeCloud governance. The corresponding Drive Markdown record is the synchronized GoreeCloud-wide representation. Both must remain materially consistent with authoritative project documentation and verified implementation evidence.
+
+Items remain **planned unless explicitly reclassified by verified implementation evidence**. The native Android foundation is currently in progress as recorded below; this does not promote the product beyond Concept.
 
 ## Product direction
 
@@ -16,12 +18,12 @@ GoreeCloud Camera is planned as one native application combining **Professional 
 ### Phase 0 — Governance and architecture baseline
 Status: **Substantially complete; licensing blocker remains**
 
-Completed repository work includes the canonical Drive roadmap/project specification, repository documentation baseline, product version identity, Platform Contract 0.2 declaration, current lifecycle classification, and exact-revision Platform Contract validation. A recognized repository license remains unresolved.
+Completed repository work includes the canonical Drive project specification, synchronized Drive roadmap, repository documentation baseline, product version identity, Platform Contract 0.2 declaration, current lifecycle classification, and exact-revision Platform Contract validation. A recognized repository license remains unresolved.
 
 ### Phase 1 — Native Android capture foundation
 Status: **In progress**
 
-Implemented in source in this milestone:
+Verified on authoritative `main` at squash commit `8de1eac6693f09ef52b0f12886108727352404e1`:
 
 - real Android/Gradle project;
 - canonical app identity and version metadata;
@@ -34,11 +36,13 @@ Implemented in source in this milestone:
 - Camera2 preview session controller;
 - initial unit/static tests and Android CI.
 
+The exact merged `main` commit passed push-triggered Android Foundation run `35017167769` and Platform Contract run `35017168819`.
+
 Still required to complete Phase 1:
 
 - verified runtime preview on representative device/emulator;
 - basic still Photo capture;
-- basic Video capture;
+- basic Video/audio capture;
 - MediaStore finalization;
 - local settings foundation;
 - initial device support/qualification record.
@@ -102,4 +106,4 @@ Real-device matrix, recovery/security/privacy/accessibility acceptance, current 
 
 ## Canonical feature families
 
-The Drive roadmap also governs detailed requirements for automatic photography, low light, portraits, Motion Photos, Best Shot, professional still/video, Cinema, stabilization, dual/multi-camera, creative capture, Lenses, filters, creator tools, scanning, visual utilities, Camera Intelligence, Private Capture, metadata, offline-first architecture, Gallery/Photos/Keepsake relationships, Glaze UI, Wardveil Security, Privacy Shield, Everkeep, capability profiles, reliability, storage/thermal/battery safeguards, provenance, accessibility, diagnostics, qualification, and release acceptance.
+The synchronized Drive roadmap retains the detailed capability requirements for automatic photography, low light, portraits, Motion Photos, Best Shot, professional still/video, Cinema, stabilization, dual/multi-camera, creative capture, Lenses, filters, creator tools, scanning, visual utilities, Camera Intelligence, Private Capture, metadata, offline-first architecture, Gallery/Photos/Keepsake relationships, Glaze UI, Wardveil Security, Privacy Shield, Everkeep, capability profiles, reliability, storage/thermal/battery safeguards, provenance, accessibility, diagnostics, qualification, and release acceptance.
