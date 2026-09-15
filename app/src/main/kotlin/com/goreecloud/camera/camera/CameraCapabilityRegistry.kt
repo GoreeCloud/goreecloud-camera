@@ -1,6 +1,7 @@
-// File internal version: 0.1.0
+// File internal version: 0.2.0
 package com.goreecloud.camera.camera
 
+import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCharacteristics
@@ -16,6 +17,7 @@ data class CameraProfile(
     val supportsRaw: Boolean,
     val supportsLogicalMultiCamera: Boolean,
     val previewSizes: List<Size>,
+    val jpegSizes: List<Size>,
 )
 
 class CameraCapabilityRegistry(
@@ -54,6 +56,16 @@ class CameraCapabilityRegistry(
         )
     }
 
+    fun selectJpegSize(profile: CameraProfile): Size? {
+        if (profile.jpegSizes.isEmpty()) return null
+
+        val bounded = profile.jpegSizes.filter { size ->
+            size.width.toLong() * size.height.toLong() <= MAX_INITIAL_JPEG_PIXELS
+        }
+        return (bounded.ifEmpty { profile.jpegSizes })
+            .maxByOrNull { size -> size.width.toLong() * size.height.toLong() }
+    }
+
     private fun readProfile(cameraId: String): CameraProfile? {
         val characteristics = try {
             cameraManager.getCameraCharacteristics(cameraId)
@@ -73,9 +85,16 @@ class CameraCapabilityRegistry(
             ?.toSet()
             .orEmpty()
 
-        val previewSizes = characteristics
+        val streamConfiguration = characteristics
             .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+
+        val previewSizes = streamConfiguration
             ?.getOutputSizes(SurfaceTexture::class.java)
+            ?.toList()
+            .orEmpty()
+
+        val jpegSizes = streamConfiguration
+            ?.getOutputSizes(ImageFormat.JPEG)
             ?.toList()
             .orEmpty()
 
@@ -85,6 +104,11 @@ class CameraCapabilityRegistry(
             supportsRaw = CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW in capabilities,
             supportsLogicalMultiCamera = CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA in capabilities,
             previewSizes = previewSizes,
+            jpegSizes = jpegSizes,
         )
+    }
+
+    private companion object {
+        const val MAX_INITIAL_JPEG_PIXELS = 12_000_000L
     }
 }
