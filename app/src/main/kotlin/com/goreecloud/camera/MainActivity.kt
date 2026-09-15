@@ -1,4 +1,4 @@
-// File internal version: 0.1.0
+// File internal version: 0.2.0
 package com.goreecloud.camera
 
 import android.Manifest
@@ -6,6 +6,7 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.SurfaceTexture
+import android.hardware.camera2.CameraManager
 import android.os.Bundle
 import android.view.Gravity
 import android.view.TextureView
@@ -19,23 +20,36 @@ import android.widget.TextView
 import com.goreecloud.camera.camera.CameraCapabilityRegistry
 import com.goreecloud.camera.camera.CameraSessionController
 import com.goreecloud.camera.camera.CameraSessionState
-import android.hardware.camera2.CameraManager
 
 class MainActivity : Activity() {
     private lateinit var previewView: TextureView
     private lateinit var stateLabel: TextView
     private lateinit var capabilityLabel: TextView
+    private lateinit var photoStatusLabel: TextView
     private lateinit var permissionButton: Button
+    private lateinit var shutterButton: Button
     private lateinit var sessionController: CameraSessionController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         buildInterface()
 
-        sessionController = CameraSessionController(this, previewView) { state, detail ->
-            val stateText = getString(R.string.session_status, state.name.lowercase())
-            stateLabel.text = if (detail.isNullOrBlank()) stateText else "$stateText\n$detail"
-        }
+        sessionController = CameraSessionController(
+            context = this,
+            textureView = previewView,
+            onStateChanged = { state, detail ->
+                val stateText = getString(R.string.session_status, state.name.lowercase())
+                stateLabel.text = if (detail.isNullOrBlank()) stateText else "$stateText\n$detail"
+                shutterButton.isEnabled = state == CameraSessionState.PREVIEWING
+            },
+            onPhotoCaptureFinished = { outcome ->
+                photoStatusLabel.text = if (outcome.isSuccess) {
+                    getString(R.string.photo_saved, outcome.displayName.orEmpty())
+                } else {
+                    getString(R.string.photo_failed, outcome.errorMessage.orEmpty())
+                }
+            },
+        )
 
         previewView.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
             override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
@@ -54,6 +68,11 @@ class MainActivity : Activity() {
 
         permissionButton.setOnClickListener {
             requestPermissions(arrayOf(Manifest.permission.CAMERA), REQUEST_CAMERA_PERMISSION)
+        }
+
+        shutterButton.setOnClickListener {
+            photoStatusLabel.text = getString(R.string.photo_capture_in_progress)
+            sessionController.capturePhoto()
         }
 
         refreshCapabilities()
@@ -138,6 +157,31 @@ class MainActivity : Activity() {
             FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, Gravity.CENTER),
         )
 
+        val capturePanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(dp(16), dp(8), dp(16), dp(16))
+            setBackgroundColor(Color.argb(168, 0, 0, 0))
+        }
+        photoStatusLabel = TextView(this).apply {
+            text = getString(R.string.photo_status_ready)
+            setTextColor(Color.WHITE)
+            textSize = 13f
+            gravity = Gravity.CENTER
+        }
+        shutterButton = Button(this).apply {
+            text = getString(R.string.capture_photo)
+            contentDescription = getString(R.string.capture_photo_content_description)
+            isEnabled = false
+        }
+        capturePanel.addView(photoStatusLabel, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+        capturePanel.addView(shutterButton, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
+
+        root.addView(
+            capturePanel,
+            FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT, Gravity.BOTTOM),
+        )
+
         setContentView(root)
     }
 
@@ -155,6 +199,7 @@ class MainActivity : Activity() {
     private fun renderPermissionState() {
         val granted = checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
         permissionButton.visibility = if (granted) View.GONE else View.VISIBLE
+        shutterButton.isEnabled = false
         if (!granted) {
             stateLabel.text = getString(R.string.permission_required)
         }
