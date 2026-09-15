@@ -1,0 +1,109 @@
+# GoreeCloud Camera Platform Contract declaration
+# File internal version: 0.1.0
+# Declaration validity does not prove implementation or acceptance.
+
+schema_version: "0.2"
+
+component:
+  type: application
+  id: goreecloud-camera
+  product_name: GoreeCloud Camera
+  repository: GoreeCloud/goreecloud-camera
+
+lifecycle: concept
+version: "0.1.0"
+
+supported_platforms:
+  - android
+
+api:
+  versions: []
+  endpoints: []
+
+platform_systems:
+  manager:
+    result: applicable-blocked
+    version: null
+    evidence: []
+    notes: "No GoreeCloud Manager integration is implemented or accepted at Concept stage."
+  privacy_shield:
+    result: applicable-blocked
+    version: null
+    evidence: []
+    notes: "Privacy Shield behavior is specified but no Camera runtime integration or acceptance evidence exists."
+  wardveil_security:
+    result: applicable-blocked
+    version: null
+    evidence: []
+    notes: "Wardveil Security boundaries are specified but no Camera runtime integration or acceptance evidence exists."
+  everkeep:
+    result: applicable-blocked
+    version: null
+    evidence: []
+    notes: "Everkeep portability and preservation requirements are specified but no runtime integration evidence exists."
+  glaze_ui:
+    result: applicable-blocked
+    version: null
+    evidence: []
+    notes: "Glaze UI 1.4.1 is the current required consumer target; no Camera UI implementation or acceptance evidence exists."
+  mesh:
+    result: applicable-blocked
+    version: null
+    evidence: []
+    notes: "Mesh coordination is planned for applicable first-party interactions such as future remote or integration workflows; no implementation evidence exists."
+    capabilities: []
+    dependencies: []
+    published_events: []
+    consumed_events: []
+  identity:
+    result: applicable-blocked
+    version: null
+    evidence: []
+    notes: "Core local capture must not require identity; identity-bound optional features are planned but no implementation or acceptance evidence exists."
+
+health:
+  health_endpoint: null
+  readiness_endpoint: null
+
+continuity:
+  backup:
+    required: false
+    requirements:
+      - "Camera does not own general media backup; downstream backup must respect capture privacy policy."
+  restore:
+    required: false
+    requirements:
+      - "Camera does not own general media-library restore; recoverable in-progress capture state is a separate reliability requirement."
+  export:
+    required: true
+    requirements:
+      - "Captured media must remain exportable as ordinary user-owned files."
+      - "Metadata export must support privacy-aware policies when implemented."
+  portability:
+    required: true
+    requirements:
+      - "Primary media must remain usable without GoreeCloud Camera."
+      - "RAW, Motion Photo relationships, sidecars, and provenance data must remain portable when those features are implemented."
+
+external_dependencies: []
+
+compatibility:
+  platform_contract: "0.2"
+  glaze_ui_required: "1.4.1"
+  requires: []
+  provides: []
+
+evidence:
+  acceptance_tests: []
+  release: []
+
+conformance:
+  status: unverified
+  validated_at: null
+  evidence: []
+  blockers:
+    - "No Camera application source or runnable build is yet verified."
+    - "No Platform System integration acceptance evidence exists."
+    - "No supported real-device qualification evidence exists."
+    - "No release or production-acceptance evidence exists."
+    - "A recognized open-source repository license has not yet been selected."
