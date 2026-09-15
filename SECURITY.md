@@ -1,13 +1,19 @@
 # GoreeCloud Camera — Security
 
-> Repository document version: **0.1.0**  
+> Repository document version: **0.2.0**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**  
-> Runtime security status: **Not yet implemented**
+> Runtime security status: **Initial session boundary implemented; Wardveil acceptance pending**
 
 ## Current status
 
-There is no runnable Camera implementation in this repository at the Concept baseline. Security architecture described here is therefore a requirement set, not proof of implemented controls.
+The native foundation centralizes Camera2 camera-device and preview-session ownership in `CameraSessionController`. Activity pause, preview-surface destruction, and controller shutdown close the active session, device, and preview surface.
+
+This is an initial security/reliability boundary only. It has not been real-device qualified and does not constitute Wardveil Security acceptance.
+
+## Current permission boundary
+
+The foundation manifest requests only camera permission. It does not request Internet, location, microphone, or media-library permissions. No remote-control, Lens, account, synchronization, or protected-storage path exists yet.
 
 ## Planned security boundaries
 
