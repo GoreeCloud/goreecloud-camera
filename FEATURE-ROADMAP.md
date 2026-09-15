@@ -1,9 +1,9 @@
 # GoreeCloud Camera — Feature Roadmap
 
-> Repository document version: **0.2.1**  
+> Repository document version: **0.2.2**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**  
-> Drive synchronized representation: **GoreeCloud/Feature Roadmap/GoreeCloud Camera/FEATURE-ROADMAP.md v1.2**
+> Drive synchronized representation: **GoreeCloud/Feature Roadmap/GoreeCloud Camera/FEATURE-ROADMAP.md**
 
 The repository `FEATURE-ROADMAP.md` is the **canonical editable roadmap source** under current GoreeCloud governance. The corresponding Drive Markdown record is the synchronized GoreeCloud-wide representation. Both must remain materially consistent with authoritative project documentation and verified implementation evidence.
 
@@ -23,7 +23,7 @@ Completed repository work includes the canonical Drive project specification, sy
 ### Phase 1 — Native Android capture foundation
 Status: **In progress**
 
-Verified on authoritative `main` at squash commit `8de1eac6693f09ef52b0f12886108727352404e1`:
+Verified on authoritative `main` through PR #4 squash commit `6dbd2c1a5c5e3fb523662f5a6e181c6dbf73644a`:
 
 - real Android/Gradle project;
 - canonical app identity and version metadata;
@@ -34,18 +34,27 @@ Verified on authoritative `main` at squash commit `8de1eac6693f09ef52b0f12886108
 - camera enumeration and Capability Registry;
 - deterministic default-camera selection;
 - Camera2 preview session controller;
-- initial unit/static tests and Android CI.
+- initial unit/static tests and Android CI;
+- exact-revision Android build provenance and Concept-stage APK evidence;
+- representative Android 16/API 36 emulator qualification using an emulated back camera;
+- verified transition to `Session: previewing` with one detected virtual camera;
+- runtime evidence collection covering UI hierarchy, screenshot, CameraService state, package/app-ops state, logcat, and provenance;
+- Platform Contract 0.2 validation with all application-specific runtime Platform System integrations still blocked/unverified.
 
-The exact merged `main` commit passed push-triggered Android Foundation run `35017167769` and Platform Contract run `35017168819`.
+The exact PR #4 candidate `cdc59289c607558090c298ee74ae2829268920c1` passed Android Foundation run `35020668795`, including the preview-runtime emulator job, and Platform Contract run `35020668711`. After merge, authoritative `main` passed Android Foundation run `35021425774`, including the same runtime preview qualification, and Platform Contract run `35021428000`.
+
+The representative emulator result proves that the current Camera2 preview path can open/configure and run a repeating preview against the configured Android virtual camera. It does **not** qualify a physical phone, prove OEM/device support, establish production UI acceptance, or prove still/video capture.
 
 Still required to complete Phase 1:
 
-- verified runtime preview on representative device/emulator;
 - basic still Photo capture;
+- MediaStore finalization and failure cleanup;
 - basic Video/audio capture;
-- MediaStore finalization;
 - local settings foundation;
-- initial device support/qualification record.
+- initial physical-device support/qualification record and camera-quirk evidence;
+- resolution of the public-repository open-source license blocker.
+
+Camera remains **Concept**. Emulator runtime evidence materially strengthens implementation confidence but does not by itself establish a user-ready release or lifecycle promotion.
 
 ### Phase 2 — Capture reliability and device qualification
 Status: **Planned**
