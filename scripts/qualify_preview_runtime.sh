@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# File internal version: 0.2.0
+# File internal version: 0.2.1
 set -euo pipefail
 
 readonly APP_ID="com.goreecloud.camera"
 readonly ACTIVITY="${APP_ID}/.MainActivity"
 readonly EVIDENCE_ROOT="runtime-capture-evidence"
 readonly MEDIA_URI="content://media/external_primary/images/media"
+readonly SHUTTER_CONTENT_DESCRIPTION="Capture a JPEG photo to shared media"
 preview_ready=0
 photo_saved=0
 media_verified=0
@@ -96,21 +97,26 @@ fi
 grep -Eq 'text="Detected camera devices: [1-9][0-9]*"' "$EVIDENCE_ROOT/window.xml"
 
 read -r tap_x tap_y < <(
-  python3 - "$EVIDENCE_ROOT/window.xml" <<'PY'
+  python3 - "$EVIDENCE_ROOT/window.xml" "$SHUTTER_CONTENT_DESCRIPTION" <<'PY'
 import re
 import sys
 import xml.etree.ElementTree as ET
 
 root = ET.parse(sys.argv[1]).getroot()
+content_description = sys.argv[2]
 for node in root.iter("node"):
-    if node.attrib.get("text") == "Capture photo":
+    if (
+        node.attrib.get("content-desc") == content_description
+        and node.attrib.get("clickable") == "true"
+        and node.attrib.get("enabled") == "true"
+    ):
         bounds = node.attrib.get("bounds", "")
         match = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", bounds)
         if match:
             x1, y1, x2, y2 = map(int, match.groups())
             print((x1 + x2) // 2, (y1 + y2) // 2)
             raise SystemExit(0)
-raise SystemExit("Capture photo button not found")
+raise SystemExit("Enabled capture button with expected accessibility description not found")
 PY
 )
 
