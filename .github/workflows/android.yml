@@ -49,14 +49,35 @@ jobs:
         with:
           gradle-version: "9.6.0"
 
+      - name: Provision current Android command-line tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOOLS_VERSION="15859902"
+          TOOLS_SHA256="4e4c464f145a7512b57d088ac6c278c03c9eea610886b35a5e0804e74eedf583"
+          TOOLS_ZIP="$RUNNER_TEMP/commandlinetools-linux-${TOOLS_VERSION}_latest.zip"
+          TOOLS_ROOT="$RUNNER_TEMP/android-command-line-tools"
+          TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-${TOOLS_VERSION}_latest.zip"
+
+          curl --fail --location --silent --show-error "$TOOLS_URL" --output "$TOOLS_ZIP"
+          echo "$TOOLS_SHA256  $TOOLS_ZIP" | sha256sum --check --strict
+          rm -rf "$TOOLS_ROOT"
+          mkdir -p "$TOOLS_ROOT/latest"
+          unzip -q "$TOOLS_ZIP" -d "$TOOLS_ROOT/unpacked"
+          mv "$TOOLS_ROOT/unpacked/cmdline-tools"/* "$TOOLS_ROOT/latest/"
+          rm -rf "$TOOLS_ROOT/unpacked"
+
+          echo "ANDROID_CMDLINE_TOOLS=$TOOLS_ROOT/latest/bin" >> "$GITHUB_ENV"
+
       - name: Install Android 17 SDK
         shell: bash
         run: |
           set -euo pipefail
           SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
-          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager -print -quit)"
-          test -n "$SDKMANAGER"
-          "$SDKMANAGER" --channel=3 "platforms;android-37" "build-tools;36.0.0"
+          SDKMANAGER="$ANDROID_CMDLINE_TOOLS/sdkmanager"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses >/dev/null || true
+          "$SDKMANAGER" --sdk_root="$SDK_ROOT" --channel=3 "platforms;android-37" "build-tools;36.0.0"
 
       - name: Verify foundation source contract
         run: python3 scripts/check_android_foundation.py
