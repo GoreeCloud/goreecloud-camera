@@ -1,35 +1,41 @@
 # GoreeCloud Camera — Security
 
-> Repository document version: **0.3.0**  
+> Repository document version: **0.4.0**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**  
-> Runtime security status: **Initial session and media-finalization boundaries implemented; Wardveil acceptance pending**
+> Runtime security status: **Bounded session/media-finalization controls implemented; video/audio runtime and Wardveil acceptance pending**
 
 ## Current status
 
-`CameraSessionController` centralizes Camera2 device/session ownership and now also owns the bounded still-capture lifecycle. Activity pause, preview-surface destruction, stop, and shutdown close active camera/session/ImageReader resources.
+`CameraSessionController` centralizes Camera2 device/session ownership and owns the current bounded still and video recording lifecycles. Activity pause, preview-surface destruction, stop, and shutdown close active camera/session/ImageReader/MediaRecorder resources and discard handled in-process pending output where applicable.
 
-The still-photo path uses a pending MediaStore row. Successful JPEG writes are published only after the write completes; handled capture/write failures discard the pending row.
+Photo and video paths use pending MediaStore rows. Successful photo publication follows JPEG validation/write completion. Successful video publication follows MediaRecorder stop/finalization plus a non-zero MediaStore size check. Handled failures discard the pending row where the process remains alive.
 
 These controls are source/runtime engineering boundaries, not Wardveil Security acceptance or production recovery qualification.
 
 ## Current permission boundary
 
-The manifest requests only camera permission. It does not request Internet, location, microphone, storage, all-files, or media-library permissions. No remote-control, Lens, account, synchronization, or protected-storage path exists.
+The manifest requests camera and microphone permissions. Camera authority supports preview/capture. Microphone authority exists only for video-with-audio and is requested just in time after an explicit Record-video action; granting it does not automatically start recording.
+
+The app does not request Internet, location, broad storage, all-files, or media-library read permissions. No remote-control, Lens, account, synchronization, or protected-storage path exists.
 
 ## Media integrity boundary
 
-The initial committer checks that the received payload begins with a JPEG signature before publishing it. An invalid payload or failed MediaStore publication is treated as a capture failure and the pending row is discarded where the process remains alive.
+The photo committer validates the JPEG signature before publication. The video committer keeps the MediaStore row pending until the recording is finalized and the stored size is non-zero. Invalid/failed handled output is treated as capture failure and the pending row is discarded where possible.
 
-Process-death recovery, storage exhaustion handling, transactional journaling, and protected/private destinations remain future reliability/security work.
+Process-death recovery, storage exhaustion handling, transactional journaling, interrupted-recording recovery, and protected/private destinations remain future reliability/security work.
+
+## Recording security boundary
+
+The current source/build implementation gates video recording on a compatible bounded video output, microphone hardware, camera readiness, and microphone permission. The engineering UI exposes active microphone state during recording. No claim is made that microphone routing or video/audio capture has passed runtime qualification; that remains a separate acceptance gate.
 
 ## Planned security boundaries
 
-Protect active camera-session ownership, temporary frames, RAW data, cached/in-progress video, Private Capture media/temp files, camera/microphone permissions, location metadata, Remote Viewfinder sessions, Lens packages/permissions, and applicable downstream credentials.
+Protect active camera-session ownership, temporary frames, RAW data, cached/in-progress video, microphone sessions, Private Capture media/temp files, camera/microphone permissions, location metadata, Remote Viewfinder sessions, Lens packages/permissions, and applicable downstream credentials.
 
 ## Diagnostics
 
-Ordinary diagnostics must not contain captured media or raw preview frames by default. CI qualification artifacts may contain the synthetic emulator capture used solely as non-user test evidence; this does not authorize production diagnostics to collect user media.
+Ordinary diagnostics must not contain captured media, raw preview frames, or recorded microphone audio by default. CI qualification artifacts may contain synthetic emulator still-capture evidence used solely as non-user test evidence; this does not authorize production diagnostics to collect user media or audio.
 
 ## Reporting security issues
 
@@ -37,4 +43,4 @@ Do not publish active secrets, private user data, or detailed exploitable vulner
 
 ## Release impact
 
-Known defects involving media integrity, protected storage, permission bypass, unauthorized remote access, extension sandbox escape, or privacy/security boundary failure are release-blocking for the affected capability.
+Known defects involving media integrity, protected storage, permission bypass, unauthorized camera/microphone activation, unauthorized remote access, extension sandbox escape, or privacy/security boundary failure are release-blocking for the affected capability.
