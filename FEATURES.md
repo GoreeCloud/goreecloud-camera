@@ -1,14 +1,14 @@
 # GoreeCloud Camera — Current Features
 
-> Repository document version: **0.4.0**  
+> Repository document version: **0.5.0**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**
 
 ## Verified runtime foundation
 
-The following bounded runtime behavior is verified on the representative Android 16 / API 36 virtual-camera CI configuration for both final PR #6 candidate `a378a17d3e6cf28a16521428fa3d77c1910e2e53` and signed authoritative `main` commit `d5272da9877b47bfca1551784f32b1031a084a8e`:
+Representative Android 16 / API 36 virtual-camera CI evidence verifies the following bounded behavior on the configured emulator:
 
-- application installation and camera-only permission grant;
+- application installation and camera permission grant;
 - Camera2 device discovery;
 - selected emulated back-camera opening;
 - preview session configuration;
@@ -17,47 +17,51 @@ The following bounded runtime behavior is verified on the representative Android
 - publication of a matching non-zero MediaStore JPEG under `DCIM/GoreeCloud Camera`;
 - readback and JPEG-signature verification of the published artifact.
 
-This evidence verifies the bounded path on the configured virtual camera only; it does not qualify a physical device or establish production support.
+The preview/JPEG regression also passed on final PR #8 candidate `86d2d63f373ddbe7df8e6681925fafb6596972f6` in Android Foundation run `35101834080`. This evidence verifies the bounded preview/still path only; it does not qualify a physical device or exercise video/audio runtime behavior.
 
-## Implemented source functionality
+## Implemented source and build functionality
 
-The first still-photo milestone now includes:
+Authoritative `main` commit `f6d414049f6ad4792a70da00903fead403dde58c` includes:
 
-- JPEG output capability discovery;
-- JPEG `ImageReader` configured as a capture-session output;
-- one-shot `TEMPLATE_STILL_CAPTURE` request;
-- an engineering **Capture photo** control kept clear of bottom system UI through system-bar inset handling;
-- collision-resistant UTC timestamp naming;
-- MediaStore reservation in `DCIM/GoreeCloud Camera`;
-- `IS_PENDING=1` while the image is incomplete;
-- JPEG write and publish by clearing `IS_PENDING`;
-- pending-row deletion on handled capture/write failure;
-- no storage, media-library, Internet, location, or microphone permission expansion;
-- static source checks for the camera-only manifest, system-inset handling, and MediaStore/still-capture contract;
-- exact-revision representative-emulator qualification of the bounded JPEG publication path.
+- JPEG output capability discovery and JPEG `ImageReader` capture output;
+- one-shot `TEMPLATE_STILL_CAPTURE` requests;
+- engineering **Capture photo** control with bottom-system-bar inset handling;
+- deterministic UTC JPEG naming;
+- MediaStore JPEG reservation/publication under `DCIM/GoreeCloud Camera` with handled-failure pending-row cleanup;
+- bounded video-size discovery for MediaRecorder-compatible output;
+- Camera2 `TEMPLATE_RECORD` recording sessions using preview plus recorder surfaces;
+- MP4 output using H.264 video plus AAC microphone audio;
+- deterministic UTC `GCAM_*.mp4` naming;
+- pending MediaStore video reservation, non-zero-size validation before publication, publish, and handled-failure discard;
+- microphone-hardware capability gating;
+- explicit just-in-time `RECORD_AUDIO` authorization after a deliberate Record-video action;
+- no automatic recording after microphone permission grant;
+- visible recording, stopping, microphone-active, saved, and failure states in the engineering shell;
+- lifecycle cleanup and preview restoration around recording;
+- no Internet, location, broad storage, all-files, or media-library read permission expansion;
+- static source-contract checks for photo/video capture, permissions, MediaStore behavior, and lifecycle boundaries;
+- unit coverage for deterministic photo/video filename generation;
+- exact-revision lint, unit tests, APK assembly, provenance/digest verification, artifact upload, and Platform Contract validation.
 
-## Other implemented foundation
+## Evidence boundary
 
-- native Android application module and Kotlin source;
-- Android 17/API 37 compile and target baseline; provisional API 29 minimum;
-- deterministic default-camera selection;
-- lifecycle-owned Camera2 session cleanup;
-- unit tests for camera selection and photo filename generation;
-- exact-source lint, unit tests, APK assembly, provenance/digest verification, artifact upload, and Platform Contract validation.
+The video/audio implementation is **source/build verified**, not runtime qualified. The current emulator workflow is configured to re-qualify preview/JPEG behavior and does not prove that MP4 recording, AAC capture, microphone routing, encoder behavior, duration/finalization, or audio/video synchronization works on a representative audio-capable device.
 
 ## Not yet implemented or accepted
 
-- physical-device qualification;
-- video/audio recording;
-- robust interrupted/process-death capture recovery;
+- video/audio runtime qualification and microphone-routing evidence;
+- physical-device qualification and device-profile/quirk records;
+- local settings persistence;
+- robust interrupted/process-death photo and recording recovery;
 - zoom/focus/exposure controls and lens switching UI;
-- production Glaze UI components;
+- production Glaze UI components and acceptance;
 - Private Capture;
 - richer metadata/provenance controls;
 - Gallery/Photos handoff;
 - accepted application-specific Platform System integrations;
-- production package/release.
+- production package/release and Stable qualification;
+- recognized open-source repository license.
 
 ## Status rule
 
-Planned capabilities remain in `FEATURE-ROADMAP.md`. Source implementation, emulator qualification, and physical-device/support claims are separate evidence levels and must not be conflated.
+Planned capabilities remain in `FEATURE-ROADMAP.md`. Source implementation, build verification, representative-emulator runtime qualification, physical-device qualification, and production acceptance are separate evidence levels and must not be conflated.
