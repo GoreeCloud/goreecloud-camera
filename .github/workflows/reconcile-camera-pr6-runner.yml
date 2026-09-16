@@ -1,0 +1,44 @@
+name: Camera PR6 documentation reconciliation runner
+
+on:
+  push:
+    branches:
+      - docs/camera-pr6-verification
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out reconciliation branch
+        uses: actions/checkout@v4
+        with:
+          ref: docs/camera-pr6-verification
+          fetch-depth: 0
+      - name: Execute staged reconciliation and remove helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import textwrap
+
+          carrier = Path('.github/workflows/reconcile-camera-pr6-docs.yml').read_text(encoding='utf-8')
+          marker = "          python3 - <<'PY'\n"
+          start = carrier.index(marker) + len(marker)
+          end = carrier.index("\n          PY\n", start)
+          program = textwrap.dedent(carrier[start:end])
+          compile(program, 'camera-pr6-reconciliation', 'exec')
+          exec(program, {'__name__': '__main__'})
+          PY
+
+          rm .github/workflows/reconcile-camera-pr6-docs.yml
+          rm .github/workflows/reconcile-camera-pr6-runner.yml
+          git config user.name "GoreeCloud"
+          git config user.email "295260680+GoreeCloud@users.noreply.github.com"
+          git add README.md FEATURES.md FEATURE-ROADMAP.md SPECIFICATIONS.md USER-MANUAL.md goreecloud.platform.yaml .github/workflows/reconcile-camera-pr6-docs.yml .github/workflows/reconcile-camera-pr6-runner.yml
+          git diff --cached --check
+          git commit -m "docs: reconcile Camera PR6 verified state"
+          git push origin HEAD:docs/camera-pr6-verification
