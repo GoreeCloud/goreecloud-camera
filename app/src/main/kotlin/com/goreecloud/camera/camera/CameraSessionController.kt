@@ -1,4 +1,4 @@
-// File internal version: 0.3.0
+// File internal version: 0.4.0
 package com.goreecloud.camera.camera
 
 import android.Manifest
@@ -138,7 +138,7 @@ class CameraSessionController(
     }
 
     @Synchronized
-    fun startSilentVideo() {
+    fun startVideoRecording() {
         if (!desiredActive || sessionState != CameraSessionState.PREVIEWING) {
             notifyVideoOutcome(
                 VideoRecordingOutcome(errorMessage = "Camera preview is not ready for video recording"),
@@ -151,11 +151,25 @@ class CameraSessionController(
             )
             return
         }
+        if (!hasMicrophone()) {
+            notifyVideoOutcome(
+                VideoRecordingOutcome(errorMessage = "This device does not report microphone capability"),
+            )
+            return
+        }
+        if (appContext.checkSelfPermission(Manifest.permission.RECORD_AUDIO) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            notifyVideoOutcome(
+                VideoRecordingOutcome(errorMessage = "Microphone permission is required for video audio"),
+            )
+            return
+        }
 
         val selectedVideoSize = videoSize
         if (selectedVideoSize == null) {
             notifyVideoOutcome(
-                VideoRecordingOutcome(errorMessage = "This camera has no compatible silent-video output"),
+                VideoRecordingOutcome(errorMessage = "This camera has no compatible bounded video output"),
             )
             return
         }
@@ -163,22 +177,22 @@ class CameraSessionController(
         videoInFlight = true
         transition(
             CameraSessionState.STARTING_VIDEO,
-            "silent-video=${selectedVideoSize.width}x${selectedVideoSize.height}",
+            "video=${selectedVideoSize.width}x${selectedVideoSize.height}, audio=microphone",
         )
-        cameraHandler.post { beginSilentVideo(selectedVideoSize) }
+        cameraHandler.post { beginVideoRecording(selectedVideoSize) }
     }
 
     @Synchronized
-    fun stopSilentVideo() {
+    fun stopVideoRecording() {
         if (!videoInFlight || sessionState != CameraSessionState.RECORDING) {
             notifyVideoOutcome(
-                VideoRecordingOutcome(errorMessage = "No silent-video recording is active"),
+                VideoRecordingOutcome(errorMessage = "No video recording is active"),
             )
             return
         }
 
         transition(CameraSessionState.STOPPING_VIDEO, null)
-        cameraHandler.post(::finishSilentVideo)
+        cameraHandler.post(::finishVideoRecording)
     }
 
     @Synchronized
@@ -216,7 +230,7 @@ class CameraSessionController(
         }
 
         videoSize = selectedVideoSize
-        notifyVideoCapability(selectedVideoSize != null)
+        notifyVideoCapability(selectedVideoSize != null && hasMicrophone())
 
         surfaceTexture.setDefaultBufferSize(previewSize.width, previewSize.height)
         previewSurface?.release()
@@ -233,7 +247,9 @@ class CameraSessionController(
         }
 
         opening = true
-        val videoDetail = selectedVideoSize?.let { ", video=${it.width}x${it.height}" } ?: ", video=unavailable"
+        val videoDetail = selectedVideoSize?.let {
+            ", video-candidate=${it.width}x${it.height}, mic=${if (hasMicrophone()) "available" else "unavailable"}"
+        } ?: ", video-candidate=unavailable"
         transition(
             CameraSessionState.OPENING,
             "camera=${selected.id}, preview=${previewSize.width}x${previewSize.height}, jpeg=${jpegSize.width}x${jpegSize.height}$videoDetail",
@@ -283,7 +299,7 @@ class CameraSessionController(
                     }
                 },
             )
-        } catch (securityException: SecurityException) {
+        } catch (_: SecurityException) {
             opening = false
             transition(CameraSessionState.ERROR, "Camera permission changed while opening")
         } catch (exception: Exception) {
@@ -453,11 +469,17 @@ class CameraSessionController(
         }
     }
 
-    private fun beginSilentVideo(selectedVideoSize: Size) {
+    private fun beginVideoRecording(selectedVideoSize: Size) {
         val camera = synchronized(this) { cameraDevice }
         val preview = synchronized(this) { previewSurface }
         if (camera == null || preview == null || !desiredActive) {
-            failPendingVideo("Camera is unavailable for silent-video recording")
+            failPendingVideo("Camera is unavailable for video recording")
+            return
+        }
+        if (appContext.checkSelfPermission(Manifest.permission.RECORD_AUDIO) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            failPendingVideo("Microphone permission changed before recording began")
             return
         }
 
@@ -472,7 +494,7 @@ class CameraSessionController(
             createPreparedMediaRecorder(reserved, selectedVideoSize)
         } catch (exception: Exception) {
             videoCommitter.discard(reserved)
-            failPendingVideo(exception.message ?: "Unable to prepare silent-video recorder")
+            failPendingVideo(exception.message ?: "Unable to prepare video/audio recorder")
             return
         }
 
@@ -497,9 +519,14 @@ class CameraSessionController(
         pending: PendingVideo,
         selectedVideoSize: Size,
     ): MediaRecorder = MediaRecorder().apply {
+        setAudioSource(MediaRecorder.AudioSource.MIC)
         setVideoSource(MediaRecorder.VideoSource.SURFACE)
         setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
         setOutputFile(pending.fileDescriptor.fileDescriptor)
+        setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+        setAudioChannels(AUDIO_CHANNELS)
+        setAudioSamplingRate(AUDIO_SAMPLE_RATE)
+        setAudioEncodingBitRate(AUDIO_BIT_RATE)
         setVideoEncoder(MediaRecorder.VideoEncoder.H264)
         setVideoSize(selectedVideoSize.width, selectedVideoSize.height)
         setVideoFrameRate(VIDEO_FRAME_RATE)
@@ -555,13 +582,16 @@ class CameraSessionController(
                     try {
                         session.setRepeatingRequest(request, null, cameraHandler)
                         recorder.start()
-                        transition(CameraSessionState.RECORDING, "silent MP4 · camera-only permission")
+                        transition(
+                            CameraSessionState.RECORDING,
+                            "MP4 H.264 + AAC · microphone active",
+                        )
                     } catch (exception: Exception) {
                         session.close()
                         synchronized(this@CameraSessionController) {
                             if (captureSession === session) captureSession = null
                         }
-                        failPendingVideo(exception.message ?: "Unable to start silent-video recording")
+                        failPendingVideo(exception.message ?: "Unable to start video/audio recording")
                     }
                 }
 
@@ -579,7 +609,7 @@ class CameraSessionController(
         }
     }
 
-    private fun finishSilentVideo() {
+    private fun finishVideoRecording() {
         val recorder: MediaRecorder
         val reserved: PendingVideo
         val session: CameraCaptureSession?
@@ -609,7 +639,7 @@ class CameraSessionController(
             videoCommitter.discard(reserved)
             notifyVideoOutcome(
                 VideoRecordingOutcome(
-                    errorMessage = stopFailure.message ?: "Silent-video recording did not finalize",
+                    errorMessage = stopFailure.message ?: "Video/audio recording did not finalize",
                 ),
             )
             restorePreviewAfterVideo()
@@ -621,7 +651,7 @@ class CameraSessionController(
         } catch (exception: Exception) {
             notifyVideoOutcome(
                 VideoRecordingOutcome(
-                    errorMessage = exception.message ?: "Unable to publish silent-video recording",
+                    errorMessage = exception.message ?: "Unable to publish video recording",
                 ),
             )
             restorePreviewAfterVideo()
@@ -725,6 +755,9 @@ class CameraSessionController(
         imageReader = null
     }
 
+    private fun hasMicrophone(): Boolean =
+        appContext.packageManager.hasSystemFeature(PackageManager.FEATURE_MICROPHONE)
+
     private fun transition(state: CameraSessionState, detail: String?) {
         sessionState = state
         mainHandler.post { onStateChanged(state, detail) }
@@ -747,5 +780,8 @@ class CameraSessionController(
         const val VIDEO_FRAME_RATE = 30
         const val VIDEO_BIT_RATE_STANDARD = 4_000_000
         const val VIDEO_BIT_RATE_HIGH = 8_000_000
+        const val AUDIO_CHANNELS = 1
+        const val AUDIO_SAMPLE_RATE = 48_000
+        const val AUDIO_BIT_RATE = 128_000
     }
 }
