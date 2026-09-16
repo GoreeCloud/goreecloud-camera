@@ -23,13 +23,14 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          import textwrap
 
           carrier = Path('.github/workflows/reconcile-camera-pr6-docs.yml').read_text(encoding='utf-8')
           marker = "          python3 - <<'PY'\n"
           start = carrier.index(marker) + len(marker)
           end = carrier.index("\n          PY\n", start)
-          program = textwrap.dedent(carrier[start:end])
+          lines = carrier[start:end].splitlines()
+          prefix = '          '
+          program = '\n'.join(line[len(prefix):] if line.startswith(prefix) else line for line in lines)
           compile(program, 'camera-pr6-reconciliation', 'exec')
           exec(program, {'__name__': '__main__'})
           PY
