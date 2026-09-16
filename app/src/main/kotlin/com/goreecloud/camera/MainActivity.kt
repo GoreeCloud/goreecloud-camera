@@ -1,4 +1,4 @@
-// File internal version: 0.3.0
+// File internal version: 0.4.0
 package com.goreecloud.camera
 
 import android.Manifest
@@ -28,9 +28,14 @@ class MainActivity : Activity() {
     private lateinit var stateLabel: TextView
     private lateinit var capabilityLabel: TextView
     private lateinit var photoStatusLabel: TextView
+    private lateinit var videoStatusLabel: TextView
     private lateinit var permissionButton: Button
     private lateinit var shutterButton: Button
+    private lateinit var videoButton: Button
     private lateinit var sessionController: CameraSessionController
+
+    private var currentSessionState = CameraSessionState.IDLE
+    private var videoCapabilityAvailable = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,9 +45,23 @@ class MainActivity : Activity() {
             context = this,
             textureView = previewView,
             onStateChanged = { state, detail ->
+                currentSessionState = state
                 val stateText = getString(R.string.session_status, state.name.lowercase())
                 stateLabel.text = if (detail.isNullOrBlank()) stateText else "$stateText\n$detail"
-                shutterButton.isEnabled = state == CameraSessionState.PREVIEWING
+
+                when (state) {
+                    CameraSessionState.STARTING_VIDEO -> {
+                        videoStatusLabel.text = getString(R.string.video_starting)
+                    }
+                    CameraSessionState.RECORDING -> {
+                        videoStatusLabel.text = getString(R.string.video_recording)
+                    }
+                    CameraSessionState.STOPPING_VIDEO -> {
+                        videoStatusLabel.text = getString(R.string.video_stopping)
+                    }
+                    else -> Unit
+                }
+                updateCaptureControls()
             },
             onPhotoCaptureFinished = { outcome ->
                 photoStatusLabel.text = if (outcome.isSuccess) {
@@ -50,6 +69,24 @@ class MainActivity : Activity() {
                 } else {
                     getString(R.string.photo_failed, outcome.errorMessage.orEmpty())
                 }
+            },
+            onVideoCapabilityChanged = { available ->
+                videoCapabilityAvailable = available
+                videoStatusLabel.text = when {
+                    !available -> getString(R.string.video_status_unavailable)
+                    checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED ->
+                        getString(R.string.video_status_ready)
+                    else -> getString(R.string.video_status_needs_microphone)
+                }
+                updateCaptureControls()
+            },
+            onVideoRecordingFinished = { outcome ->
+                videoStatusLabel.text = if (outcome.isSuccess) {
+                    getString(R.string.video_saved, outcome.displayName.orEmpty())
+                } else {
+                    getString(R.string.video_failed, outcome.errorMessage.orEmpty())
+                }
+                updateCaptureControls()
             },
         )
 
@@ -77,8 +114,20 @@ class MainActivity : Activity() {
             sessionController.capturePhoto()
         }
 
+        videoButton.setOnClickListener {
+            when (currentSessionState) {
+                CameraSessionState.RECORDING -> {
+                    videoStatusLabel.text = getString(R.string.video_stopping)
+                    sessionController.stopVideoRecording()
+                }
+                CameraSessionState.PREVIEWING -> beginVideoRecordingFromUserAction()
+                else -> Unit
+            }
+        }
+
         refreshCapabilities()
         renderPermissionState()
+        updateCaptureControls()
     }
 
     override fun onResume() {
@@ -102,10 +151,22 @@ class MainActivity : Activity() {
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CAMERA_PERMISSION) {
-            renderPermissionState()
-            refreshCapabilities()
-            maybeStartPreview()
+        when (requestCode) {
+            REQUEST_CAMERA_PERMISSION -> {
+                renderPermissionState()
+                refreshCapabilities()
+                maybeStartPreview()
+            }
+            REQUEST_RECORD_AUDIO_PERMISSION -> {
+                val granted = checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
+                    PackageManager.PERMISSION_GRANTED
+                videoStatusLabel.text = if (granted) {
+                    getString(R.string.video_status_permission_granted)
+                } else {
+                    getString(R.string.video_status_permission_denied)
+                }
+                updateCaptureControls()
+            }
         }
     }
 
@@ -173,6 +234,7 @@ class MainActivity : Activity() {
             )
             setBackgroundColor(Color.argb(168, 0, 0, 0))
         }
+
         photoStatusLabel = TextView(this).apply {
             text = getString(R.string.photo_status_ready)
             setTextColor(Color.WHITE)
@@ -184,8 +246,23 @@ class MainActivity : Activity() {
             contentDescription = getString(R.string.capture_photo_content_description)
             isEnabled = false
         }
+        videoStatusLabel = TextView(this).apply {
+            text = getString(R.string.video_status_checking)
+            setTextColor(Color.WHITE)
+            textSize = 13f
+            gravity = Gravity.CENTER
+            setPadding(0, dp(8), 0, 0)
+        }
+        videoButton = Button(this).apply {
+            text = getString(R.string.record_video)
+            contentDescription = getString(R.string.record_video_content_description)
+            isEnabled = false
+        }
+
         capturePanel.addView(photoStatusLabel, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         capturePanel.addView(shutterButton, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
+        capturePanel.addView(videoStatusLabel, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+        capturePanel.addView(videoButton, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
 
         root.addView(
             capturePanel,
@@ -212,6 +289,25 @@ class MainActivity : Activity() {
         setContentView(root)
     }
 
+    private fun beginVideoRecordingFromUserAction() {
+        if (!videoCapabilityAvailable) {
+            videoStatusLabel.text = getString(R.string.video_status_unavailable)
+            return
+        }
+
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            videoStatusLabel.text = getString(R.string.video_status_needs_microphone)
+            requestPermissions(
+                arrayOf(Manifest.permission.RECORD_AUDIO),
+                REQUEST_RECORD_AUDIO_PERMISSION,
+            )
+            return
+        }
+
+        videoStatusLabel.text = getString(R.string.video_starting)
+        sessionController.startVideoRecording()
+    }
+
     private fun maybeStartPreview() {
         if (!::sessionController.isInitialized) return
         if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
@@ -226,9 +322,32 @@ class MainActivity : Activity() {
     private fun renderPermissionState() {
         val granted = checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
         permissionButton.visibility = if (granted) View.GONE else View.VISIBLE
-        shutterButton.isEnabled = false
         if (!granted) {
             stateLabel.text = getString(R.string.permission_required)
+        }
+        updateCaptureControls()
+    }
+
+    private fun updateCaptureControls() {
+        val cameraGranted = checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        shutterButton.isEnabled = cameraGranted && currentSessionState == CameraSessionState.PREVIEWING
+
+        when (currentSessionState) {
+            CameraSessionState.RECORDING -> {
+                videoButton.isEnabled = true
+                videoButton.text = getString(R.string.stop_video)
+                videoButton.contentDescription = getString(R.string.stop_video_content_description)
+            }
+            CameraSessionState.PREVIEWING -> {
+                videoButton.isEnabled = cameraGranted && videoCapabilityAvailable
+                videoButton.text = getString(R.string.record_video)
+                videoButton.contentDescription = getString(R.string.record_video_content_description)
+            }
+            else -> {
+                videoButton.isEnabled = false
+                videoButton.text = getString(R.string.record_video)
+                videoButton.contentDescription = getString(R.string.record_video_content_description)
+            }
         }
     }
 
@@ -246,5 +365,6 @@ class MainActivity : Activity() {
 
     private companion object {
         const val REQUEST_CAMERA_PERMISSION = 1001
+        const val REQUEST_RECORD_AUDIO_PERMISSION = 1002
     }
 }
