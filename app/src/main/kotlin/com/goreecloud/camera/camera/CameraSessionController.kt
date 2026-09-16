@@ -1,4 +1,4 @@
-// File internal version: 0.2.0
+// File internal version: 0.3.0
 package com.goreecloud.camera.camera
 
 import android.Manifest
@@ -15,14 +15,18 @@ import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.OutputConfiguration
 import android.hardware.camera2.params.SessionConfiguration
 import android.media.ImageReader
+import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
+import android.util.Size
 import android.view.Surface
 import android.view.TextureView
 import com.goreecloud.camera.storage.PendingPhoto
+import com.goreecloud.camera.storage.PendingVideo
 import com.goreecloud.camera.storage.PhotoMediaStoreCommitter
+import com.goreecloud.camera.storage.VideoMediaStoreCommitter
 import java.util.concurrent.Executor
 
 enum class CameraSessionState {
@@ -31,10 +35,22 @@ enum class CameraSessionState {
     OPENING,
     PREVIEWING,
     CAPTURING,
+    STARTING_VIDEO,
+    RECORDING,
+    STOPPING_VIDEO,
     ERROR,
 }
 
 data class PhotoCaptureOutcome(
+    val displayName: String? = null,
+    val uri: Uri? = null,
+    val errorMessage: String? = null,
+) {
+    val isSuccess: Boolean
+        get() = uri != null && errorMessage == null
+}
+
+data class VideoRecordingOutcome(
     val displayName: String? = null,
     val uri: Uri? = null,
     val errorMessage: String? = null,
@@ -48,11 +64,14 @@ class CameraSessionController(
     private val textureView: TextureView,
     private val onStateChanged: (CameraSessionState, String?) -> Unit,
     private val onPhotoCaptureFinished: (PhotoCaptureOutcome) -> Unit = {},
+    private val onVideoCapabilityChanged: (Boolean) -> Unit = {},
+    private val onVideoRecordingFinished: (VideoRecordingOutcome) -> Unit = {},
 ) {
     private val appContext = context.applicationContext
     private val cameraManager = appContext.getSystemService(CameraManager::class.java)
     private val capabilityRegistry = CameraCapabilityRegistry(cameraManager)
     private val photoCommitter = PhotoMediaStoreCommitter(appContext.contentResolver)
+    private val videoCommitter = VideoMediaStoreCommitter(appContext.contentResolver)
     private val mainHandler = Handler(Looper.getMainLooper())
     private val cameraThread = HandlerThread("GoreeCloudCameraSession").apply { start() }
     private val cameraHandler = Handler(cameraThread.looper)
@@ -73,6 +92,10 @@ class CameraSessionController(
     private var imageReader: ImageReader? = null
     private var pendingPhoto: PendingPhoto? = null
     private var captureInFlight = false
+    private var videoSize: Size? = null
+    private var mediaRecorder: MediaRecorder? = null
+    private var pendingVideo: PendingVideo? = null
+    private var videoInFlight = false
 
     fun start() {
         desiredActive = true
@@ -102,9 +125,9 @@ class CameraSessionController(
             )
             return
         }
-        if (captureInFlight) {
+        if (captureInFlight || videoInFlight) {
             notifyPhotoOutcome(
-                PhotoCaptureOutcome(errorMessage = "A photo capture is already in progress"),
+                PhotoCaptureOutcome(errorMessage = "Another capture operation is already in progress"),
             )
             return
         }
@@ -112,6 +135,50 @@ class CameraSessionController(
         captureInFlight = true
         transition(CameraSessionState.CAPTURING, null)
         cameraHandler.post(::captureStillImage)
+    }
+
+    @Synchronized
+    fun startSilentVideo() {
+        if (!desiredActive || sessionState != CameraSessionState.PREVIEWING) {
+            notifyVideoOutcome(
+                VideoRecordingOutcome(errorMessage = "Camera preview is not ready for video recording"),
+            )
+            return
+        }
+        if (captureInFlight || videoInFlight) {
+            notifyVideoOutcome(
+                VideoRecordingOutcome(errorMessage = "Another capture operation is already in progress"),
+            )
+            return
+        }
+
+        val selectedVideoSize = videoSize
+        if (selectedVideoSize == null) {
+            notifyVideoOutcome(
+                VideoRecordingOutcome(errorMessage = "This camera has no compatible silent-video output"),
+            )
+            return
+        }
+
+        videoInFlight = true
+        transition(
+            CameraSessionState.STARTING_VIDEO,
+            "silent-video=${selectedVideoSize.width}x${selectedVideoSize.height}",
+        )
+        cameraHandler.post { beginSilentVideo(selectedVideoSize) }
+    }
+
+    @Synchronized
+    fun stopSilentVideo() {
+        if (!videoInFlight || sessionState != CameraSessionState.RECORDING) {
+            notifyVideoOutcome(
+                VideoRecordingOutcome(errorMessage = "No silent-video recording is active"),
+            )
+            return
+        }
+
+        transition(CameraSessionState.STOPPING_VIDEO, null)
+        cameraHandler.post(::finishSilentVideo)
     }
 
     @Synchronized
@@ -141,11 +208,15 @@ class CameraSessionController(
             capabilityRegistry.selectPreviewSize(it, textureView.width, textureView.height)
         }
         val jpegSize = profile?.let(capabilityRegistry::selectJpegSize)
+        val selectedVideoSize = profile?.let(capabilityRegistry::selectVideoSize)
         val surfaceTexture = textureView.surfaceTexture
         if (profile == null || previewSize == null || jpegSize == null || surfaceTexture == null) {
             transition(CameraSessionState.ERROR, "No compatible preview and JPEG configuration is available")
             return
         }
+
+        videoSize = selectedVideoSize
+        notifyVideoCapability(selectedVideoSize != null)
 
         surfaceTexture.setDefaultBufferSize(previewSize.width, previewSize.height)
         previewSurface?.release()
@@ -162,9 +233,10 @@ class CameraSessionController(
         }
 
         opening = true
+        val videoDetail = selectedVideoSize?.let { ", video=${it.width}x${it.height}" } ?: ", video=unavailable"
         transition(
             CameraSessionState.OPENING,
-            "camera=${selected.id}, preview=${previewSize.width}x${previewSize.height}, jpeg=${jpegSize.width}x${jpegSize.height}",
+            "camera=${selected.id}, preview=${previewSize.width}x${previewSize.height}, jpeg=${jpegSize.width}x${jpegSize.height}$videoDetail",
         )
         openCamera(selected.id)
     }
@@ -195,6 +267,7 @@ class CameraSessionController(
                             camera.close()
                         }
                         failPendingPhoto("Camera disconnected")
+                        failPendingVideo("Camera disconnected", restorePreview = false)
                         transition(CameraSessionState.ERROR, "Camera disconnected")
                     }
 
@@ -205,6 +278,7 @@ class CameraSessionController(
                             camera.close()
                         }
                         failPendingPhoto("Camera error code $error")
+                        failPendingVideo("Camera error code $error", restorePreview = false)
                         transition(CameraSessionState.ERROR, "Camera error code $error")
                     }
                 },
@@ -232,7 +306,7 @@ class CameraSessionController(
             cameraExecutor,
             object : CameraCaptureSession.StateCallback() {
                 override fun onConfigured(session: CameraCaptureSession) {
-                    if (!desiredActive) {
+                    if (!desiredActive || videoInFlight) {
                         session.close()
                         return
                     }
@@ -379,6 +453,199 @@ class CameraSessionController(
         }
     }
 
+    private fun beginSilentVideo(selectedVideoSize: Size) {
+        val camera = synchronized(this) { cameraDevice }
+        val preview = synchronized(this) { previewSurface }
+        if (camera == null || preview == null || !desiredActive) {
+            failPendingVideo("Camera is unavailable for silent-video recording")
+            return
+        }
+
+        val reserved = try {
+            videoCommitter.reserve()
+        } catch (exception: Exception) {
+            failPendingVideo(exception.message ?: "Unable to reserve video storage")
+            return
+        }
+
+        val recorder = try {
+            createPreparedMediaRecorder(reserved, selectedVideoSize)
+        } catch (exception: Exception) {
+            videoCommitter.discard(reserved)
+            failPendingVideo(exception.message ?: "Unable to prepare silent-video recorder")
+            return
+        }
+
+        synchronized(this) {
+            if (!desiredActive || !videoInFlight) {
+                runCatching { recorder.reset() }
+                recorder.release()
+                videoCommitter.discard(reserved)
+                return
+            }
+            pendingVideo = reserved
+            mediaRecorder = recorder
+            captureSession?.close()
+            captureSession = null
+        }
+
+        configureRecordingSession(camera, preview, recorder)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun createPreparedMediaRecorder(
+        pending: PendingVideo,
+        selectedVideoSize: Size,
+    ): MediaRecorder = MediaRecorder().apply {
+        setVideoSource(MediaRecorder.VideoSource.SURFACE)
+        setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+        setOutputFile(pending.fileDescriptor.fileDescriptor)
+        setVideoEncoder(MediaRecorder.VideoEncoder.H264)
+        setVideoSize(selectedVideoSize.width, selectedVideoSize.height)
+        setVideoFrameRate(VIDEO_FRAME_RATE)
+        setVideoEncodingBitRate(
+            if (selectedVideoSize.width.toLong() * selectedVideoSize.height.toLong() >= 1_500_000L) {
+                VIDEO_BIT_RATE_HIGH
+            } else {
+                VIDEO_BIT_RATE_STANDARD
+            },
+        )
+        prepare()
+    }
+
+    private fun configureRecordingSession(
+        camera: CameraDevice,
+        preview: Surface,
+        recorder: MediaRecorder,
+    ) {
+        val recordSurface = try {
+            recorder.surface
+        } catch (exception: Exception) {
+            failPendingVideo(exception.message ?: "Video encoder surface is unavailable")
+            return
+        }
+
+        val sessionConfiguration = SessionConfiguration(
+            SessionConfiguration.SESSION_REGULAR,
+            listOf(OutputConfiguration(preview), OutputConfiguration(recordSurface)),
+            cameraExecutor,
+            object : CameraCaptureSession.StateCallback() {
+                override fun onConfigured(session: CameraCaptureSession) {
+                    if (!desiredActive || !videoInFlight || mediaRecorder !== recorder) {
+                        session.close()
+                        return
+                    }
+
+                    val request = try {
+                        camera.createCaptureRequest(CameraDevice.TEMPLATE_RECORD).apply {
+                            addTarget(preview)
+                            addTarget(recordSurface)
+                            set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO)
+                        }.build()
+                    } catch (exception: Exception) {
+                        session.close()
+                        failPendingVideo(exception.message ?: "Unable to create video request")
+                        return
+                    }
+
+                    synchronized(this@CameraSessionController) {
+                        captureSession = session
+                    }
+
+                    try {
+                        session.setRepeatingRequest(request, null, cameraHandler)
+                        recorder.start()
+                        transition(CameraSessionState.RECORDING, "silent MP4 · camera-only permission")
+                    } catch (exception: Exception) {
+                        session.close()
+                        synchronized(this@CameraSessionController) {
+                            if (captureSession === session) captureSession = null
+                        }
+                        failPendingVideo(exception.message ?: "Unable to start silent-video recording")
+                    }
+                }
+
+                override fun onConfigureFailed(session: CameraCaptureSession) {
+                    session.close()
+                    failPendingVideo("Camera video session configuration failed")
+                }
+            },
+        )
+
+        try {
+            camera.createCaptureSession(sessionConfiguration)
+        } catch (exception: Exception) {
+            failPendingVideo(exception.message ?: "Video capture session could not be created")
+        }
+    }
+
+    private fun finishSilentVideo() {
+        val recorder: MediaRecorder
+        val reserved: PendingVideo
+        val session: CameraCaptureSession?
+
+        synchronized(this) {
+            recorder = mediaRecorder ?: return failPendingVideo("Video recorder is unavailable")
+            reserved = pendingVideo ?: return failPendingVideo("Pending video destination is unavailable")
+            session = captureSession
+        }
+
+        runCatching { session?.stopRepeating() }
+        runCatching { session?.abortCaptures() }
+
+        val stopFailure = runCatching { recorder.stop() }.exceptionOrNull()
+        runCatching { recorder.reset() }
+        recorder.release()
+
+        synchronized(this) {
+            if (mediaRecorder === recorder) mediaRecorder = null
+            captureSession?.close()
+            captureSession = null
+            if (pendingVideo === reserved) pendingVideo = null
+            videoInFlight = false
+        }
+
+        if (stopFailure != null) {
+            videoCommitter.discard(reserved)
+            notifyVideoOutcome(
+                VideoRecordingOutcome(
+                    errorMessage = stopFailure.message ?: "Silent-video recording did not finalize",
+                ),
+            )
+            restorePreviewAfterVideo()
+            return
+        }
+
+        val uri = try {
+            videoCommitter.publish(reserved)
+        } catch (exception: Exception) {
+            notifyVideoOutcome(
+                VideoRecordingOutcome(
+                    errorMessage = exception.message ?: "Unable to publish silent-video recording",
+                ),
+            )
+            restorePreviewAfterVideo()
+            return
+        }
+
+        notifyVideoOutcome(
+            VideoRecordingOutcome(
+                displayName = reserved.displayName,
+                uri = uri,
+            ),
+        )
+        restorePreviewAfterVideo()
+    }
+
+    private fun restorePreviewAfterVideo() {
+        val camera = synchronized(this) { cameraDevice }
+        if (desiredActive && camera != null) {
+            createCaptureSession(camera)
+        } else {
+            transition(CameraSessionState.IDLE, null)
+        }
+    }
+
     private fun failPendingPhoto(message: String) {
         val reserved = synchronized(this) {
             val photo = pendingPhoto
@@ -395,10 +662,40 @@ class CameraSessionController(
         synchronized(this) {
             captureInFlight = false
         }
-        if (desiredActive && sessionState != CameraSessionState.ERROR) {
+        if (desiredActive && sessionState != CameraSessionState.ERROR && !videoInFlight) {
             transition(CameraSessionState.PREVIEWING, null)
         }
         notifyPhotoOutcome(PhotoCaptureOutcome(errorMessage = message))
+    }
+
+    private fun failPendingVideo(
+        message: String,
+        restorePreview: Boolean = true,
+    ) {
+        val reserved: PendingVideo?
+        val recorder: MediaRecorder?
+        synchronized(this) {
+            reserved = pendingVideo
+            pendingVideo = null
+            recorder = mediaRecorder
+            mediaRecorder = null
+            videoInFlight = false
+            captureSession?.close()
+            captureSession = null
+        }
+
+        if (recorder != null) {
+            runCatching { recorder.reset() }
+            recorder.release()
+        }
+        if (reserved != null) {
+            videoCommitter.discard(reserved)
+        }
+        notifyVideoOutcome(VideoRecordingOutcome(errorMessage = message))
+
+        if (restorePreview) {
+            restorePreviewAfterVideo()
+        }
     }
 
     @Synchronized
@@ -406,6 +703,17 @@ class CameraSessionController(
         pendingPhoto?.let(photoCommitter::discard)
         pendingPhoto = null
         captureInFlight = false
+
+        mediaRecorder?.let { recorder ->
+            runCatching { recorder.reset() }
+            recorder.release()
+        }
+        mediaRecorder = null
+        pendingVideo?.let(videoCommitter::discard)
+        pendingVideo = null
+        videoInFlight = false
+        videoSize = null
+        notifyVideoCapability(false)
 
         captureSession?.close()
         captureSession = null
@@ -426,7 +734,18 @@ class CameraSessionController(
         mainHandler.post { onPhotoCaptureFinished(outcome) }
     }
 
+    private fun notifyVideoCapability(available: Boolean) {
+        mainHandler.post { onVideoCapabilityChanged(available) }
+    }
+
+    private fun notifyVideoOutcome(outcome: VideoRecordingOutcome) {
+        mainHandler.post { onVideoRecordingFinished(outcome) }
+    }
+
     private companion object {
         const val MAX_IMAGES = 2
+        const val VIDEO_FRAME_RATE = 30
+        const val VIDEO_BIT_RATE_STANDARD = 4_000_000
+        const val VIDEO_BIT_RATE_HIGH = 8_000_000
     }
 }
