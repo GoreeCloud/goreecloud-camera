@@ -1,4 +1,4 @@
-// File internal version: 0.2.0
+// File internal version: 0.3.0
 package com.goreecloud.camera.camera
 
 import android.graphics.ImageFormat
@@ -6,6 +6,7 @@ import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
+import android.media.MediaRecorder
 import android.util.Size
 import kotlin.math.abs
 import kotlin.math.max
@@ -18,6 +19,7 @@ data class CameraProfile(
     val supportsLogicalMultiCamera: Boolean,
     val previewSizes: List<Size>,
     val jpegSizes: List<Size>,
+    val videoSizes: List<Size>,
 )
 
 class CameraCapabilityRegistry(
@@ -66,6 +68,18 @@ class CameraCapabilityRegistry(
             .maxByOrNull { size -> size.width.toLong() * size.height.toLong() }
     }
 
+    fun selectVideoSize(profile: CameraProfile): Size? {
+        if (profile.videoSizes.isEmpty()) return null
+
+        val bounded = profile.videoSizes.filter { size ->
+            val longSide = max(size.width, size.height)
+            val shortSide = min(size.width, size.height)
+            longSide <= 1920 && shortSide <= 1080
+        }
+        return (bounded.ifEmpty { profile.videoSizes })
+            .maxByOrNull { size -> size.width.toLong() * size.height.toLong() }
+    }
+
     private fun readProfile(cameraId: String): CameraProfile? {
         val characteristics = try {
             cameraManager.getCameraCharacteristics(cameraId)
@@ -98,6 +112,11 @@ class CameraCapabilityRegistry(
             ?.toList()
             .orEmpty()
 
+        val videoSizes = streamConfiguration
+            ?.getOutputSizes(MediaRecorder::class.java)
+            ?.toList()
+            .orEmpty()
+
         return CameraProfile(
             descriptor = CameraDescriptor(cameraId, lensFacing),
             hardwareLevel = characteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL) ?: -1,
@@ -105,6 +124,7 @@ class CameraCapabilityRegistry(
             supportsLogicalMultiCamera = CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA in capabilities,
             previewSizes = previewSizes,
             jpegSizes = jpegSizes,
+            videoSizes = videoSizes,
         )
     }
 
