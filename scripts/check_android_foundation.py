@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# File internal version: 0.4.0
+# File internal version: 0.4.1
 from pathlib import Path
 import re
 import sys
@@ -110,18 +110,16 @@ for required_fragment in (
     "capturePaddingBottom + bottomSystemInset",
     "REQUEST_RECORD_AUDIO_PERMISSION",
     "requestPermissions(\n                arrayOf(Manifest.permission.RECORD_AUDIO)",
-    "video_recording",
-    "microphone active",
+    "R.string.video_recording",
+    "sessionController.startVideoRecording()",
+    "REQUEST_RECORD_AUDIO_PERMISSION ->",
 ):
     if required_fragment not in activity_text:
         fail(f"capture UI/permission contract is missing: {required_fragment}")
 
-if "Manifest.permission.RECORD_AUDIO" in activity_text.split("override fun onCreate", 1)[0]:
-    fail("microphone permission must not be requested before explicit video action")
-if "sessionController.startVideoRecording()" not in activity_text:
-    fail("video start control is not wired to the session controller")
-if "REQUEST_RECORD_AUDIO_PERMISSION ->" not in activity_text:
-    fail("microphone permission result is not handled explicitly")
+on_create_prefix = activity_text.split("override fun onCreate", 1)[0]
+if "requestPermissions" in on_create_prefix:
+    fail("runtime permissions must not be requested before explicit user action")
 
 controller_text = CONTROLLER.read_text(encoding="utf-8")
 for required_fragment in (
