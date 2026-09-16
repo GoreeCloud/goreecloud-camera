@@ -1,4 +1,4 @@
-// File internal version: 0.2.0
+// File internal version: 0.3.0
 package com.goreecloud.camera
 
 import android.Manifest
@@ -7,12 +7,14 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraManager
+import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import android.view.WindowInsets
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -157,10 +159,18 @@ class MainActivity : Activity() {
             FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, Gravity.CENTER),
         )
 
+        val capturePaddingHorizontal = dp(16)
+        val capturePaddingTop = dp(8)
+        val capturePaddingBottom = dp(16)
         val capturePanel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(dp(16), dp(8), dp(16), dp(16))
+            setPadding(
+                capturePaddingHorizontal,
+                capturePaddingTop,
+                capturePaddingHorizontal,
+                capturePaddingBottom,
+            )
             setBackgroundColor(Color.argb(168, 0, 0, 0))
         }
         photoStatusLabel = TextView(this).apply {
@@ -181,6 +191,23 @@ class MainActivity : Activity() {
             capturePanel,
             FrameLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT, Gravity.BOTTOM),
         )
+
+        root.setOnApplyWindowInsetsListener { _, insets ->
+            val bottomSystemInset = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                insets.getInsets(WindowInsets.Type.systemBars()).bottom
+            } else {
+                @Suppress("DEPRECATION")
+                insets.systemWindowInsetBottom
+            }
+            capturePanel.setPadding(
+                capturePaddingHorizontal,
+                capturePaddingTop,
+                capturePaddingHorizontal,
+                capturePaddingBottom + bottomSystemInset,
+            )
+            insets
+        }
+        root.requestApplyInsets()
 
         setContentView(root)
     }
