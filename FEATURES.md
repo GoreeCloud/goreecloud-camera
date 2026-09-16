@@ -1,50 +1,62 @@
 # GoreeCloud Camera — Current Features
 
-> Repository document version: **0.2.0**  
+> Repository document version: **0.3.0**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**
 
-## Verified source-level functionality
+## Verified runtime foundation
 
-The repository now contains an actual native Android Camera foundation. The following capabilities are implemented in source and are subject to exact-revision CI build/test validation:
+The following bounded runtime behavior is verified on the representative Android 16 / API 36 virtual-camera CI configuration:
 
-- Android application module with `com.goreecloud.camera` identity.
-- Android 17 / API 37 compile and target baseline.
-- Provisional API 29 minimum SDK.
-- Native Kotlin application source using Android platform APIs.
-- Runtime camera permission request and denied/granted UI state.
-- Camera2 camera enumeration.
-- Capability profiles recording lens facing, hardware level, RAW capability, logical multi-camera capability, and available preview sizes.
-- Deterministic default-camera selection preferring rear, then external, then front cameras.
-- Lifecycle-owned Camera2 preview session controller.
-- Preview resource cleanup on activity pause and surface destruction.
-- Minimal engineering viewfinder shell that explicitly states Glaze UI integration is pending.
-- Unit tests for pure camera-selection behavior.
-- Static source-contract checks covering application identity, SDK targets, version identity, required source, camera permission, and absence of additional sensitive permissions.
-- Android CI for lint, unit tests, debug APK assembly, exact-source verification, provenance, digest verification, and artifact upload.
+- application installation and camera-only permission grant;
+- Camera2 device discovery;
+- selected emulated back-camera opening;
+- preview session configuration;
+- repeating preview reaching application state `PREVIEWING`.
 
-## Runtime qualification state
+This evidence does not qualify a physical device.
 
-No real-device or emulator preview acceptance has yet been recorded. Therefore the repository must not claim that preview works correctly on any supported device even if the build succeeds.
+## Implemented source functionality
 
-## Not yet implemented
+The source additionally contains the first still-photo milestone:
 
-- still-photo capture;
-- photo persistence or atomic finalization;
-- video or microphone capture;
-- MediaStore writes;
-- recording recovery;
-- zoom/focus/exposure controls;
-- lens switching UI;
-- Glaze UI runtime components;
+- JPEG output capability discovery;
+- JPEG `ImageReader` configured as a capture-session output;
+- one-shot `TEMPLATE_STILL_CAPTURE` request;
+- an engineering **Capture photo** control;
+- collision-resistant UTC timestamp naming;
+- MediaStore reservation in `DCIM/GoreeCloud Camera`;
+- `IS_PENDING=1` while the image is incomplete;
+- JPEG write and publish by clearing `IS_PENDING`;
+- pending-row deletion on handled capture/write failure;
+- no storage, media-library, Internet, location, or microphone permission expansion;
+- static source checks for the camera-only manifest and MediaStore/still-capture contract;
+- representative emulator CI intended to verify a non-zero published JPEG and JPEG signature.
+
+The photo path is not a supported feature until its exact candidate and authoritative-main runtime qualification passes.
+
+## Other implemented foundation
+
+- native Android application module and Kotlin source;
+- Android 17/API 37 compile and target baseline; provisional API 29 minimum;
+- deterministic default-camera selection;
+- lifecycle-owned Camera2 session cleanup;
+- unit tests for camera selection and photo filename generation;
+- exact-source lint, unit tests, APK assembly, provenance/digest verification, artifact upload, and Platform Contract validation.
+
+## Not yet implemented or accepted
+
+- physical-device qualification;
+- video/audio recording;
+- robust interrupted/process-death capture recovery;
+- zoom/focus/exposure controls and lens switching UI;
+- production Glaze UI components;
 - Private Capture;
-- metadata/provenance controls;
-- device-specific quirk profiles;
+- richer metadata/provenance controls;
 - Gallery/Photos handoff;
-- accepted Platform System integrations;
-- qualified devices;
+- accepted application-specific Platform System integrations;
 - production package/release.
 
 ## Status rule
 
-Planned capabilities remain in `FEATURE-ROADMAP.md`. A source implementation is not promoted to a supported feature until the appropriate build, runtime, real-device, privacy, security, accessibility, and acceptance evidence exists.
+Planned capabilities remain in `FEATURE-ROADMAP.md`. Source implementation, emulator qualification, and physical-device/support claims are separate evidence levels and must not be conflated.

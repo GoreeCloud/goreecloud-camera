@@ -1,4 +1,4 @@
-# File internal version: 0.3.0
+# File internal version: 0.4.0
 name: Android Foundation
 
 on:
@@ -79,7 +79,7 @@ jobs:
           yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses >/dev/null || true
           "$SDKMANAGER" --sdk_root="$SDK_ROOT" --channel=3 "platforms;android-37.0" "build-tools;36.0.0"
 
-      - name: Verify foundation source contract
+      - name: Verify foundation and photo-capture source contract
         run: python3 scripts/check_android_foundation.py
 
       - name: Lint, unit test, and assemble debug APK
@@ -109,7 +109,7 @@ jobs:
           workflow=$GITHUB_WORKFLOW
           run_id=$GITHUB_RUN_ID
           run_attempt=$GITHUB_RUN_ATTEMPT
-          artifact_role=android-camera-concept-foundation
+          artifact_role=android-camera-concept-capture-foundation
           signing_role=ci-debug-installability-only
           stable_release_authority=none
           PROVENANCE
@@ -127,7 +127,7 @@ jobs:
           if-no-files-found: error
           path: artifact-camera-android/*
 
-  preview-runtime-emulator:
+  capture-runtime-emulator:
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -194,7 +194,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Qualify Camera2 preview on Android 16 virtual camera
+      - name: Qualify Camera2 preview and JPEG MediaStore capture on Android 16 virtual camera
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
         with:
           api-level: 36
@@ -205,10 +205,10 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back emulated -camera-front none
           script: bash scripts/qualify_preview_runtime.sh
 
-      - name: Upload runtime preview evidence
+      - name: Upload runtime capture evidence
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: goreecloud-camera-runtime-preview
+          name: goreecloud-camera-runtime-capture
           if-no-files-found: error
-          path: runtime-preview-evidence/*
+          path: runtime-capture-evidence/*

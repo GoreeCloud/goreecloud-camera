@@ -1,6 +1,6 @@
 # GoreeCloud Camera — Feature Roadmap
 
-> Repository document version: **0.2.2**  
+> Repository document version: **0.3.0**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**  
 > Drive synchronized representation: **GoreeCloud/Feature Roadmap/GoreeCloud Camera/FEATURE-ROADMAP.md**
@@ -23,7 +23,7 @@ Completed repository work includes the canonical Drive project specification, sy
 ### Phase 1 — Native Android capture foundation
 Status: **In progress**
 
-Verified on authoritative `main` through PR #4 squash commit `6dbd2c1a5c5e3fb523662f5a6e181c6dbf73644a`:
+Verified on authoritative `main` through documentation-reconciled commit `1687d81a65c037b46a25f98a23e5a0d1453e58de`:
 
 - real Android/Gradle project;
 - canonical app identity and version metadata;
@@ -41,17 +41,37 @@ Verified on authoritative `main` through PR #4 squash commit `6dbd2c1a5c5e3fb523
 - runtime evidence collection covering UI hierarchy, screenshot, CameraService state, package/app-ops state, logcat, and provenance;
 - Platform Contract 0.2 validation with all application-specific runtime Platform System integrations still blocked/unverified.
 
-The exact PR #4 candidate `cdc59289c607558090c298ee74ae2829268920c1` passed Android Foundation run `35020668795`, including the preview-runtime emulator job, and Platform Contract run `35020668711`. After merge, authoritative `main` passed Android Foundation run `35021425774`, including the same runtime preview qualification, and Platform Contract run `35021428000`.
+PR #4 candidate `cdc59289c607558090c298ee74ae2829268920c1` passed Android Foundation run `35020668795`, including preview-runtime emulator qualification, and Platform Contract run `35020668711`. After merge, authoritative commit `6dbd2c1a5c5e3fb523662f5a6e181c6dbf73644a` passed Android Foundation run `35021425774` and Platform Contract run `35021428000`. Documentation reconciliation PR #5 then produced authoritative `main` commit `1687d81a65c037b46a25f98a23e5a0d1453e58de`, whose Android Foundation and Platform Contract gates also passed.
 
-The representative emulator result proves that the current Camera2 preview path can open/configure and run a repeating preview against the configured Android virtual camera. It does **not** qualify a physical phone, prove OEM/device support, establish production UI acceptance, or prove still/video capture.
+The representative emulator result proves that the current authoritative Camera2 preview path can open/configure and run a repeating preview against the configured Android virtual camera. It does **not** qualify a physical phone, prove OEM/device support, establish production UI acceptance, or prove a merged still/video capture path.
 
-Still required to complete Phase 1:
+#### PR #6 — first bounded JPEG Photo + MediaStore candidate
 
-- basic still Photo capture;
-- MediaStore finalization and failure cleanup;
+The active PR #6 source candidate adds the first bounded still-photo implementation while preserving product version `0.1.0`, Concept lifecycle, Platform Contract 0.2, the single Camera2 session authority, and the camera-only runtime permission boundary.
+
+Candidate source includes:
+
+- JPEG output-size discovery through the Capability Registry;
+- one JPEG `ImageReader` added to the existing Camera2 session outputs;
+- explicit engineering-stage **Capture photo** control and `CAPTURING` state;
+- one-shot `TEMPLATE_STILL_CAPTURE` requests;
+- deterministic UTC `GCAM_*.jpg` naming;
+- MediaStore reservation in `DCIM/GoreeCloud Camera` using `IS_PENDING=1`;
+- JPEG signature validation before publication;
+- publish-after-write by clearing `IS_PENDING`;
+- deletion of the pending MediaStore row on handled reserve/capture/write/finalization failure paths;
+- lifecycle cleanup of pending capture state and `ImageReader` resources;
+- no Internet, location, microphone, storage, all-files, or media-library read permission expansion;
+- source-contract validation, filename unit coverage, and an Android 16/API 36 emulator capture gate intended to verify a non-zero published JPEG and JPEG signature.
+
+This candidate implementation is **not yet authoritative `main` state** and must not be described as a supported Camera feature until the exact final PR head passes its required checks and the merged authoritative revision is independently revalidated. Physical-device support, production UI, process-death recovery, application-specific Platform System acceptance, Release Candidate, and Stable status remain unverified.
+
+Still required to complete Phase 1 after the bounded still-photo candidate is accepted:
+
 - basic Video/audio capture;
 - local settings foundation;
 - initial physical-device support/qualification record and camera-quirk evidence;
+- stronger interrupted/process-death capture recovery beyond handled in-process cleanup;
 - resolution of the public-repository open-source license blocker.
 
 Camera remains **Concept**. Emulator runtime evidence materially strengthens implementation confidence but does not by itself establish a user-ready release or lifecycle promotion.
@@ -59,7 +79,7 @@ Camera remains **Concept**. Emulator runtime evidence materially strengthens imp
 ### Phase 2 — Capture reliability and device qualification
 Status: **Planned**
 
-- atomic still finalization;
+- atomic/recoverable still and recording finalization beyond the bounded Phase 1 MediaStore commit path;
 - recoverable/journaled recording design;
 - storage reserve/remaining-time logic;
 - battery-critical finalization;
@@ -101,7 +121,7 @@ Private Capture, protected destinations, metadata policy, sharing-time privacy c
 ### Phase 9 — GoreeCloud ecosystem integration
 Status: **Planned**
 
-Current Platform Contract 0.2 evaluation against exactly seven Integral Platform Systems, current Glaze UI consumer target 1.4.1, and evidence-backed Gallery/Photos/Everkeep/Privacy Shield/Wardveil/Manager/Mesh/Identity relationships. GoreeCloud Sync remains separately governed.
+Platform Contract 0.2 evaluation against exactly seven Integral Platform Systems and evidence-backed Gallery/Photos/Everkeep/Privacy Shield/Wardveil/Manager/Mesh/Identity relationships. GoreeCloud Sync remains separately governed. Glaze UI migration must use the current approved Stable contract when production UI implementation begins; no application-specific Glaze acceptance is claimed by the current engineering shell.
 
 ### Phase 10 — Remote and adaptive hardware experiences
 Status: **Planned**
@@ -115,4 +135,4 @@ Real-device matrix, recovery/security/privacy/accessibility acceptance, current 
 
 ## Canonical feature families
 
-The synchronized Drive roadmap retains the detailed capability requirements for automatic photography, low light, portraits, Motion Photos, Best Shot, professional still/video, Cinema, stabilization, dual/multi-camera, creative capture, Lenses, filters, creator tools, scanning, visual utilities, Camera Intelligence, Private Capture, metadata, offline-first architecture, Gallery/Photos/Keepsake relationships, Glaze UI, Wardveil Security, Privacy Shield, Everkeep, capability profiles, reliability, storage/thermal/battery safeguards, provenance, accessibility, diagnostics, qualification, and release acceptance.
+The synchronized Drive roadmap retains the detailed capability requirements for automatic photography, low light, portraits, Motion Photos, Best Shot, professional still/video, Cinema, stabilization, dual/multi-camera, creative capture, Lenses, filters, creator tools, scanning, visual utilities, Camera Intelligence, Private Capture, metadata, offline-first architecture, Gallery/Photos/Everkeep relationships, Glaze UI, Wardveil Security, Privacy Shield, Everkeep, capability profiles, reliability, storage/thermal/battery safeguards, provenance, accessibility, diagnostics, qualification, and release acceptance.
