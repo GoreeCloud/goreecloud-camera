@@ -40,6 +40,17 @@ jobs:
           git config user.name "GoreeCloud"
           git config user.email "295260680+GoreeCloud@users.noreply.github.com"
           git add README.md FEATURES.md FEATURE-ROADMAP.md SPECIFICATIONS.md USER-MANUAL.md goreecloud.platform.yaml .github/workflows/reconcile-camera-pr6-docs.yml .github/workflows/reconcile-camera-pr6-runner.yml
-          git diff --cached --check --ignore-space-at-eol
+
+          expected=".github/workflows/reconcile-camera-pr6-docs.yml
+.github/workflows/reconcile-camera-pr6-runner.yml
+FEATURE-ROADMAP.md
+FEATURES.md
+README.md
+SPECIFICATIONS.md
+USER-MANUAL.md
+goreecloud.platform.yaml"
+          actual="$(git diff --cached --name-only | sort)"
+          test "$actual" = "$expected"
+
           git commit -m "docs: reconcile Camera PR6 verified state"
           git push origin HEAD:docs/camera-pr6-verification
