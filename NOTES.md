@@ -1,6 +1,6 @@
 # GoreeCloud Camera — Repository Notes
 
-> Repository document version: **0.2.0**  
+> Repository document version: **0.3.0**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**
 
@@ -8,7 +8,7 @@
 
 - Canonical repository: `GoreeCloud/goreecloud-camera`.
 - Product version baseline: `0.1.0`.
-- Lifecycle remains Concept pending runtime evidence suitable for promotion.
+- Lifecycle remains Concept; source/build progress does not establish promotion.
 - Primary platform: native Android/Kotlin.
 - Canonical application ID: `com.goreecloud.camera`.
 - Compile/target SDK: 37 / Android 17.
@@ -16,19 +16,23 @@
 - Android Gradle Plugin: 9.4.0.
 - CI Gradle baseline: 9.6.0.
 - Platform Contract: 0.2.
-- Current Glaze UI consumer target: 1.4.1.
+- Current Stable Glaze UI consumer target: 1.5.0.
 - Integral Platform Systems: exactly seven; GoreeCloud Sync is separate.
-- Source now includes Camera2 capability enumeration and a lifecycle-owned preview session controller.
-- Runtime preview on a qualified device is not yet verified.
+- Source includes Camera2 capability discovery, lifecycle-owned preview/still/video session control, bounded JPEG still capture, and bounded Camera2/MediaRecorder MP4 recording with H.264 video plus AAC microphone audio.
+- Representative Android 16 / API 36 emulator evidence qualifies preview and one JPEG + MediaStore still-capture path; it does not qualify video/audio recording or microphone routing.
+- Authoritative PR #8 source implementation was squash-merged as signed `main` commit `f6d414049f6ad4792a70da00903fead403dde58c` after exact-head Android Foundation run `35101834080` and Platform Contract run `35101835061` passed.
 
 ## Resolved engineering decisions for the foundation
 
 - Android application identity: `com.goreecloud.camera`.
 - Kotlin/native Android implementation.
-- Camera2 is used directly for the first preview/session foundation.
+- Camera2 remains the direct camera/session authority for the current foundation.
+- MediaRecorder provides the bounded current MP4 encoder/recorder path.
 - API 37 is the compile and target baseline.
 - API 29 is a provisional development minimum, not a final support promise.
-- Current runtime permission scope is camera only.
+- Camera permission is required for preview/capture.
+- `RECORD_AUDIO` is declared only because the bounded video-with-audio path requires it; the app requests microphone authority just in time after an explicit Record-video action, and permission grant does not auto-start recording.
+- Internet, location, broad storage, all-files, and media-library read permissions remain absent.
 - Core build uses AGP built-in Kotlin to avoid a redundant Kotlin Android plugin declaration.
 
 ## Open engineering decisions
@@ -36,10 +40,10 @@
 - final minimum Android/API support baseline;
 - whether later high-level CameraX abstractions should wrap selected flows while Camera2 remains available for advanced controls;
 - initial supported hardware/qualification tiers;
-- still-capture persistence and atomic finalization design;
-- video capture and recording-recovery design;
+- robust still/video process-death recovery and stale pending-media reconciliation;
+- video/audio runtime qualification matrix and microphone-routing behavior;
 - Motion Photo representation;
-- codec/HDR policy;
+- codec/HDR policy beyond the bounded H.264/AAC foundation;
 - Private Capture protected-storage design;
 - provenance/content-authenticity format;
 - Lens runtime and future authoring model;
@@ -58,12 +62,12 @@ All seven Integral Platform Systems remain blocked/unaccepted. Source-level priv
 
 ### Device qualification
 
-No supported real-device Camera preview qualification has been recorded. The OnePlus Nord N200 remains a broader GoreeCloud OS Mobile physical qualification baseline, but Camera support on it must be tested independently.
+No supported real-device Camera preview/capture qualification has been recorded. Representative virtual-camera evidence is not a supported-device claim. Video/audio runtime and microphone-routing qualification also remain open.
 
 ### User manual synchronization
 
-A central Camera user-manual record has not yet been verified. Repository `USER-MANUAL.md` describes the engineering foundation only and must later be synchronized through the approved central workflow.
+The central Camera user-manual record exists at `GoreeCloud/User Manuals/User Manual — GoreeCloud Camera.md` and must remain synchronized with verified repository behavior. It must preserve the distinction between source/build implementation and runtime/device qualification.
 
 ## Next engineering milestone
 
-Complete the first useful capture loop: verify the preview on a representative Android 16/17 target, implement a basic still-photo request, stage/finalize the image through MediaStore without legacy broad-storage permission, and add deterministic tests around capture state and failure cleanup.
+Obtain explicit video/audio runtime evidence on an audio-capable representative target without conflating that result with physical-device support. Verify recording start/stop/finalization, MediaStore publication, microphone permission behavior, audio track presence/routing where the target can support it, handled failure cleanup, and preview recovery. Physical-device/device-profile qualification, local settings, process-death recovery, licensing, production Glaze UI, and Platform System acceptance remain separate open gates.
