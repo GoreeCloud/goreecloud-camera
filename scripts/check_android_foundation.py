@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# File internal version: 0.3.0
+# File internal version: 0.4.0
 from pathlib import Path
 import re
 import sys
@@ -9,8 +9,11 @@ ROOT = Path(__file__).resolve().parents[1]
 APP_GRADLE = ROOT / "app" / "build.gradle.kts"
 MANIFEST = ROOT / "app" / "src" / "main" / "AndroidManifest.xml"
 MAIN_ACTIVITY = ROOT / "app" / "src" / "main" / "kotlin" / "com" / "goreecloud" / "camera" / "MainActivity.kt"
-CONTROLLER = ROOT / "app" / "src" / "main" / "kotlin" / "com" / "goreecloud" / "camera" / "camera" / "CameraSessionController.kt"
-MEDIA_COMMITTER = ROOT / "app" / "src" / "main" / "kotlin" / "com" / "goreecloud" / "camera" / "storage" / "PhotoMediaStoreCommitter.kt"
+CAMERA_ROOT = ROOT / "app" / "src" / "main" / "kotlin" / "com" / "goreecloud" / "camera"
+CONTROLLER = CAMERA_ROOT / "camera" / "CameraSessionController.kt"
+PHOTO_COMMITTER = CAMERA_ROOT / "storage" / "PhotoMediaStoreCommitter.kt"
+VIDEO_NAMER = CAMERA_ROOT / "storage" / "VideoFileNamer.kt"
+VIDEO_COMMITTER = CAMERA_ROOT / "storage" / "VideoMediaStoreCommitter.kt"
 
 EXPECTED = {
     "applicationId": "com.goreecloud.camera",
@@ -28,23 +31,30 @@ REQUIRED_FILES = [
     APP_GRADLE,
     MANIFEST,
     MAIN_ACTIVITY,
-    ROOT / "app" / "src" / "main" / "kotlin" / "com" / "goreecloud" / "camera" / "camera" / "CameraCapabilityRegistry.kt",
+    CAMERA_ROOT / "camera" / "CameraCapabilityRegistry.kt",
     CONTROLLER,
-    ROOT / "app" / "src" / "main" / "kotlin" / "com" / "goreecloud" / "camera" / "storage" / "PhotoFileNamer.kt",
-    MEDIA_COMMITTER,
+    CAMERA_ROOT / "storage" / "PhotoFileNamer.kt",
+    PHOTO_COMMITTER,
+    VIDEO_NAMER,
+    VIDEO_COMMITTER,
 ]
+
+REQUIRED_PERMISSIONS = {
+    "android.permission.CAMERA",
+    "android.permission.RECORD_AUDIO",
+}
 
 FORBIDDEN_PERMISSIONS = {
     "android.permission.INTERNET",
     "android.permission.ACCESS_FINE_LOCATION",
     "android.permission.ACCESS_COARSE_LOCATION",
     "android.permission.ACCESS_MEDIA_LOCATION",
-    "android.permission.RECORD_AUDIO",
     "android.permission.READ_EXTERNAL_STORAGE",
     "android.permission.WRITE_EXTERNAL_STORAGE",
     "android.permission.MANAGE_EXTERNAL_STORAGE",
     "android.permission.READ_MEDIA_IMAGES",
     "android.permission.READ_MEDIA_VIDEO",
+    "android.permission.READ_MEDIA_AUDIO",
 }
 
 ANDROID_NS = "{http://schemas.android.com/apk/res/android}"
@@ -76,11 +86,21 @@ permissions = {
     element.attrib.get(ANDROID_NS + "name")
     for element in manifest_root.findall("uses-permission")
 }
-if permissions != {"android.permission.CAMERA"}:
-    fail(f"runtime permissions must remain camera-only, found: {sorted(permissions)}")
+if permissions != REQUIRED_PERMISSIONS:
+    fail(
+        "runtime permissions must remain camera + just-in-time microphone only, "
+        f"found: {sorted(permissions)}"
+    )
 for forbidden in sorted(FORBIDDEN_PERMISSIONS):
     if forbidden in permissions:
         fail(f"unexpected sensitive permission in capture milestone: {forbidden}")
+
+feature_names = {
+    element.attrib.get(ANDROID_NS + "name")
+    for element in manifest_root.findall("uses-feature")
+}
+if "android.hardware.microphone" not in feature_names:
+    fail("optional microphone hardware feature declaration is missing")
 
 activity_text = MAIN_ACTIVITY.read_text(encoding="utf-8")
 for required_fragment in (
@@ -88,29 +108,67 @@ for required_fragment in (
     "WindowInsets.Type.systemBars()",
     "systemWindowInsetBottom",
     "capturePaddingBottom + bottomSystemInset",
+    "REQUEST_RECORD_AUDIO_PERMISSION",
+    "requestPermissions(\n                arrayOf(Manifest.permission.RECORD_AUDIO)",
+    "video_recording",
+    "microphone active",
 ):
     if required_fragment not in activity_text:
-        fail(f"capture controls must remain clear of bottom system UI: {required_fragment}")
+        fail(f"capture UI/permission contract is missing: {required_fragment}")
+
+if "Manifest.permission.RECORD_AUDIO" in activity_text.split("override fun onCreate", 1)[0]:
+    fail("microphone permission must not be requested before explicit video action")
+if "sessionController.startVideoRecording()" not in activity_text:
+    fail("video start control is not wired to the session controller")
+if "REQUEST_RECORD_AUDIO_PERMISSION ->" not in activity_text:
+    fail("microphone permission result is not handled explicitly")
 
 controller_text = CONTROLLER.read_text(encoding="utf-8")
-if "CameraDevice.TEMPLATE_STILL_CAPTURE" not in controller_text:
-    fail("still capture request template is missing")
-if "ImageReader.newInstance" not in controller_text or "ImageFormat.JPEG" not in controller_text:
-    fail("JPEG ImageReader output is missing")
+for required_fragment in (
+    "CameraDevice.TEMPLATE_STILL_CAPTURE",
+    "ImageReader.newInstance",
+    "ImageFormat.JPEG",
+    "CameraDevice.TEMPLATE_RECORD",
+    "MediaRecorder.AudioSource.MIC",
+    "MediaRecorder.AudioEncoder.AAC",
+    "MediaRecorder.VideoEncoder.H264",
+    "MediaRecorder.OutputFormat.MPEG_4",
+    "Manifest.permission.RECORD_AUDIO",
+    "PackageManager.FEATURE_MICROPHONE",
+    "videoCommitter.publish",
+    "videoCommitter.discard",
+):
+    if required_fragment not in controller_text:
+        fail(f"camera/video source contract is missing: {required_fragment}")
 
-committer_text = MEDIA_COMMITTER.read_text(encoding="utf-8")
+photo_committer_text = PHOTO_COMMITTER.read_text(encoding="utf-8")
 for required_fragment in (
     "MediaStore.Images.Media.IS_PENDING",
     "MediaStore.Images.Media.RELATIVE_PATH",
     "MediaStore.VOLUME_EXTERNAL_PRIMARY",
 ):
-    if required_fragment not in committer_text:
-        fail(f"MediaStore capture contract is missing: {required_fragment}")
+    if required_fragment not in photo_committer_text:
+        fail(f"MediaStore photo contract is missing: {required_fragment}")
 
-platform_text = (ROOT / "goreecloud.platform.yaml").read_text(encoding="utf-8") if (ROOT / "goreecloud.platform.yaml").exists() else ""
+video_committer_text = VIDEO_COMMITTER.read_text(encoding="utf-8")
+for required_fragment in (
+    "MediaStore.Video.Media.IS_PENDING",
+    "MediaStore.Video.Media.RELATIVE_PATH",
+    "MediaStore.Video.Media.SIZE",
+    "MediaStore.VOLUME_EXTERNAL_PRIMARY",
+):
+    if required_fragment not in video_committer_text:
+        fail(f"MediaStore video contract is missing: {required_fragment}")
+
+video_namer_text = VIDEO_NAMER.read_text(encoding="utf-8")
+if '"GCAM_${formatter.format(Instant.ofEpochMilli(epochMillis))}.mp4"' not in video_namer_text:
+    fail("deterministic UTC MP4 naming contract is missing")
+
+platform_path = ROOT / "goreecloud.platform.yaml"
+platform_text = platform_path.read_text(encoding="utf-8") if platform_path.exists() else ""
 if "lifecycle: concept" not in platform_text:
     fail("Platform Contract lifecycle must remain concept")
 if 'version: "0.1.0"' not in platform_text:
     fail("Platform Contract product version must remain 0.1.0")
 
-print("camera-foundation: preview and still-capture source contract checks passed")
+print("camera-foundation: preview, JPEG, and bounded video/audio source contract checks passed")
