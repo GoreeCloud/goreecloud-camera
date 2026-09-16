@@ -1,5 +1,5 @@
 # GoreeCloud Camera Platform Contract declaration
-# File internal version: 0.1.0
+# File internal version: 0.2.0
 # Declaration validity does not prove implementation or acceptance.
 
 schema_version: "0.2"
@@ -30,22 +30,22 @@ platform_systems:
     result: applicable-blocked
     version: null
     evidence: []
-    notes: "The foundation source deliberately requests only camera permission and has no network, location, audio, or media-library permission; Privacy Shield runtime integration is still unimplemented and unaccepted."
+    notes: "The current candidate remains camera-only for runtime permission scope and has no network, location, audio, or existing-media-library read permission; Privacy Shield runtime integration is still unimplemented and unaccepted."
   wardveil_security:
     result: applicable-blocked
     version: null
     evidence: []
-    notes: "Camera session ownership is centralized in the initial controller source, but Wardveil Security runtime integration and acceptance do not yet exist."
+    notes: "Camera session ownership is centralized and the candidate uses pending MediaStore publication with handled-failure cleanup, but Wardveil Security runtime integration and acceptance do not yet exist."
   everkeep:
     result: applicable-blocked
     version: null
     evidence: []
-    notes: "No media finalization, portability evidence, or Everkeep runtime integration exists yet."
+    notes: "The candidate implements a bounded ordinary-JPEG MediaStore finalization path, but Everkeep continuity, preservation, portability acceptance, and runtime integration do not yet exist."
   glaze_ui:
     result: applicable-blocked
     version: null
     evidence: []
-    notes: "Glaze UI 1.4.1 remains the required consumer target; the current engineering preview shell intentionally does not claim Glaze UI conformance."
+    notes: "Glaze UI 1.5.0 is the current approved Stable consumer target. The engineering Camera shell has not implemented or accepted that contract."
   mesh:
     result: applicable-blocked
     version: null
@@ -59,7 +59,7 @@ platform_systems:
     result: applicable-blocked
     version: null
     evidence: []
-    notes: "Core local preview does not require identity; optional identity-bound workflows remain unimplemented and unaccepted."
+    notes: "Core local preview and bounded local JPEG capture do not require identity; optional identity-bound workflows remain unimplemented and unaccepted."
 
 health:
   health_endpoint: null
@@ -73,23 +73,23 @@ continuity:
   restore:
     required: false
     requirements:
-      - "Camera does not own general media-library restore; recoverable in-progress capture state is a separate reliability requirement."
+      - "Camera does not own general media-library restore; recoverable in-progress capture state remains a Camera reliability requirement beyond the bounded handled-failure cleanup in the current candidate."
   export:
     required: true
     requirements:
-      - "Captured media must remain exportable as ordinary user-owned files once still/video persistence is implemented."
-      - "Metadata export must support privacy-aware policies when implemented."
+      - "The bounded still-photo candidate publishes ordinary JPEG files through Android MediaStore so primary media remains user-owned and portable."
+      - "Metadata export must support privacy-aware policies when richer metadata controls are implemented."
   portability:
     required: true
     requirements:
-      - "Primary media must remain usable without GoreeCloud Camera once media capture is implemented."
+      - "Primary captured media must remain usable without GoreeCloud Camera."
       - "RAW, Motion Photo relationships, sidecars, and provenance data must remain portable when those features are implemented."
 
 external_dependencies: []
 
 compatibility:
   platform_contract: "0.2"
-  glaze_ui_required: "1.4.1"
+  glaze_ui_required: "1.5.0"
   requires: []
   provides: []
 
@@ -102,8 +102,10 @@ conformance:
   validated_at: null
   evidence: []
   blockers:
-    - "No supported real-device Camera preview qualification evidence exists."
-    - "No still-photo or video media persistence/finalization is implemented."
-    - "No Platform System integration acceptance evidence exists."
+    - "No supported physical-device Camera preview or still-capture qualification evidence exists."
+    - "The PR #6 JPEG + MediaStore path remains a candidate until exact-head and authoritative-main runtime gates pass."
+    - "Basic video/audio capture is not implemented."
+    - "No application-specific Platform System integration acceptance evidence exists."
+    - "The engineering Camera shell has not implemented or accepted the current Stable Glaze UI 1.5.0 contract."
     - "No release or production-acceptance evidence exists."
     - "A recognized open-source repository license has not yet been selected."
