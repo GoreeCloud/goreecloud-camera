@@ -1,6 +1,6 @@
 # GoreeCloud Camera — Feature Roadmap
 
-> Repository document version: **0.3.0**  
+> Repository document version: **0.4.0**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**  
 > Drive synchronized representation: **GoreeCloud/Feature Roadmap/GoreeCloud Camera/FEATURE-ROADMAP.md**
@@ -23,7 +23,7 @@ Completed repository work includes the canonical Drive project specification, sy
 ### Phase 1 — Native Android capture foundation
 Status: **In progress**
 
-Verified on authoritative `main` through documentation-reconciled commit `1687d81a65c037b46a25f98a23e5a0d1453e58de`:
+Verified on authoritative `main` through bounded JPEG-capture commit `d5272da9877b47bfca1551784f32b1031a084a8e`:
 
 - real Android/Gradle project;
 - canonical app identity and version metadata;
@@ -43,17 +43,20 @@ Verified on authoritative `main` through documentation-reconciled commit `1687d8
 
 PR #4 candidate `cdc59289c607558090c298ee74ae2829268920c1` passed Android Foundation run `35020668795`, including preview-runtime emulator qualification, and Platform Contract run `35020668711`. After merge, authoritative commit `6dbd2c1a5c5e3fb523662f5a6e181c6dbf73644a` passed Android Foundation run `35021425774` and Platform Contract run `35021428000`. Documentation reconciliation PR #5 then produced authoritative `main` commit `1687d81a65c037b46a25f98a23e5a0d1453e58de`, whose Android Foundation and Platform Contract gates also passed.
 
-The representative emulator result proves that the current authoritative Camera2 preview path can open/configure and run a repeating preview against the configured Android virtual camera. It does **not** qualify a physical phone, prove OEM/device support, establish production UI acceptance, or prove a merged still/video capture path.
+PR #6 final candidate `a378a17d3e6cf28a16521428fa3d77c1910e2e53` passed Android Foundation run `35083327911`, including the Android 16 / API 36 `capture-runtime-emulator` job, and Platform Contract run `35083328806`. PR #6 was squash-merged as signed authoritative `main` commit `d5272da9877b47bfca1551784f32b1031a084a8e`. Push-triggered Android Foundation run `35083832517` then passed both ordinary validation/build and the same JPEG + MediaStore runtime gate on the merged revision, while Platform Contract run `35083833021` also passed.
 
-#### PR #6 — first bounded JPEG Photo + MediaStore candidate
+The representative emulator evidence proves that the current authoritative Camera2 path can open/configure a repeating preview and complete one bounded JPEG still capture through MediaStore on the configured Android virtual camera. It does **not** qualify a physical phone, prove OEM/device support, establish production UI acceptance, prove video/audio capture, or establish release readiness.
 
-The active PR #6 source candidate adds the first bounded still-photo implementation while preserving product version `0.1.0`, Concept lifecycle, Platform Contract 0.2, the single Camera2 session authority, and the camera-only runtime permission boundary.
+#### PR #6 — first bounded JPEG Photo + MediaStore implementation
 
-Candidate source includes:
+PR #6 is implemented and verified on authoritative `main` while preserving product version `0.1.0`, Concept lifecycle, Platform Contract 0.2, the single Camera2 session authority, and the camera-only runtime permission boundary.
+
+Verified implementation includes:
 
 - JPEG output-size discovery through the Capability Registry;
 - one JPEG `ImageReader` added to the existing Camera2 session outputs;
 - explicit engineering-stage **Capture photo** control and `CAPTURING` state;
+- bottom-system-bar inset handling that keeps the engineering shutter clear of system navigation UI;
 - one-shot `TEMPLATE_STILL_CAPTURE` requests;
 - deterministic UTC `GCAM_*.jpg` naming;
 - MediaStore reservation in `DCIM/GoreeCloud Camera` using `IS_PENDING=1`;
@@ -62,11 +65,11 @@ Candidate source includes:
 - deletion of the pending MediaStore row on handled reserve/capture/write/finalization failure paths;
 - lifecycle cleanup of pending capture state and `ImageReader` resources;
 - no Internet, location, microphone, storage, all-files, or media-library read permission expansion;
-- source-contract validation, filename unit coverage, and an Android 16/API 36 emulator capture gate intended to verify a non-zero published JPEG and JPEG signature.
+- source-contract validation, filename unit coverage, and Android 16/API 36 emulator qualification that verified a non-zero published JPEG and JPEG signature on both the final candidate and merged authoritative revision.
 
-This candidate implementation is **not yet authoritative `main` state** and must not be described as a supported Camera feature until the exact final PR head passes its required checks and the merged authoritative revision is independently revalidated. Physical-device support, production UI, process-death recovery, application-specific Platform System acceptance, Release Candidate, and Stable status remain unverified.
+The runtime result is bounded representative-emulator evidence, not physical-device or production acceptance. Physical-device support, production UI, process-death recovery, application-specific Platform System acceptance, Release Candidate, and Stable status remain unverified.
 
-Still required to complete Phase 1 after the bounded still-photo candidate is accepted:
+Still required to complete Phase 1:
 
 - basic Video/audio capture;
 - local settings foundation;

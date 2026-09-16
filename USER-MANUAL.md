@@ -1,6 +1,6 @@
 # GoreeCloud Camera — User Manual
 
-> Repository document version: **0.3.0**  
+> Repository document version: **0.4.0**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**  
 > Manual status: **Engineering capture foundation**
@@ -16,7 +16,7 @@ The repository contains a buildable native Android Camera2 foundation. Represent
 3. Launch **GoreeCloud Camera** and grant camera permission.
 4. Wait for the engineering status to show `Session: previewing`.
 5. Use **Capture photo** to request a JPEG still.
-6. On a successful candidate path, the status shows `Photo saved: <filename>` and the image is published under `DCIM/GoreeCloud Camera` through MediaStore.
+6. On the verified bounded path, the status shows `Photo saved: <filename>` and the image is published under `DCIM/GoreeCloud Camera` through MediaStore.
 7. Leaving the activity closes the active camera/session outputs.
 
 ## Permission behavior
@@ -36,4 +36,4 @@ A visible `Photo saved` result proves only that the current process reported pub
 - If capture fails, the engineering shell reports a photo failure and the implementation attempts to remove the pending MediaStore row.
 - A CI or emulator success does not qualify a physical phone.
 
-A central GoreeCloud User Manuals copy has not yet been verified for Camera and remains a documentation follow-up.
+The required GoreeCloud-wide representation is `GoreeCloud/User Manuals/User Manual — GoreeCloud Camera.md`; this repository `USER-MANUAL.md` remains the canonical editable source.

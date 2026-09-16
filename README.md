@@ -1,6 +1,6 @@
 # GoreeCloud Camera
 
-> Repository document version: **0.3.0**  
+> Repository document version: **0.4.0**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**
 
@@ -10,7 +10,7 @@ GoreeCloud Camera is the first-party photography, video, scanning, and creative-
 
 The authoritative foundation is a native Android Camera2 implementation. Representative Android 16 / API 36 virtual-camera qualification has verified that the current preview path reaches `PREVIEWING`; this is emulator evidence only and does not qualify a physical device.
 
-This source milestone adds the first bounded still-photo path: JPEG output through Camera2, a user-triggerable engineering shutter, and scoped-storage MediaStore publication using an `IS_PENDING` row with failure cleanup. Runtime qualification for the photo path is part of the exact-revision CI gate and must pass before the source is treated as verified capture behavior.
+Authoritative `main` now includes the first bounded still-photo path: JPEG output through Camera2, a user-triggerable engineering shutter, and scoped-storage MediaStore publication using an `IS_PENDING` row with handled-failure cleanup. Final PR #6 candidate `a378a17d3e6cf28a16521428fa3d77c1910e2e53` and signed merged commit `d5272da9877b47bfca1551784f32b1031a084a8e` both passed the representative Android 16 / API 36 emulator capture gate, which verified one non-zero published JPEG and its JPEG signature. This remains emulator evidence only and does not qualify a physical device.
 
 The release lifecycle remains **Concept**. Emulator success, source presence, and a buildable APK do not establish supported devices, production UI acceptance, or release readiness.
 
@@ -23,8 +23,8 @@ The release lifecycle remains **Concept**. Emulator success, source presence, an
 - Runtime manifest requests only `android.permission.CAMERA`.
 - Camera2 device enumeration, capability profiles, deterministic default-camera selection, and lifecycle-owned session control.
 - Representative Android 16 / API 36 emulated-back-camera preview qualification.
-- Candidate JPEG still capture using `TEMPLATE_STILL_CAPTURE` and `ImageReader`.
-- Candidate MediaStore commit path to `DCIM/GoreeCloud Camera` using `IS_PENDING`, publish-after-write, and pending-row deletion on handled failure.
+- Verified representative-emulator JPEG still capture using `TEMPLATE_STILL_CAPTURE` and `ImageReader`.
+- Verified representative-emulator MediaStore commit path to `DCIM/GoreeCloud Camera` using `IS_PENDING`, publish-after-write, and pending-row deletion on handled failure.
 - No Internet, location, microphone, storage, broad media-library, or all-files permission.
 - Exact-revision lint, unit tests, APK build/provenance, Platform Contract validation, and emulator capture qualification.
 
@@ -58,7 +58,7 @@ The manifest remains camera-only. Android 10+ MediaStore lets Camera publish med
 ## GoreeCloud platform direction
 
 - Platform Contract: **0.2**.
-- Current required Glaze UI consumer target: **1.4.1**.
+- Current required Glaze UI consumer target: **1.5.0**.
 - Seven Integral Platform Systems are evaluated explicitly: GoreeCloud Manager, Privacy Shield, Wardveil Security, Everkeep, Glaze UI, GoreeCloud Mesh, and GoreeCloud Identity.
 - GoreeCloud Sync remains separately governed and is not an eighth Integral Platform System.
 
