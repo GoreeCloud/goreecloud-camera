@@ -1,0 +1,231 @@
+name: Reconcile Camera PR6 documentation
+
+on:
+  push:
+    branches:
+      - docs/camera-pr6-verification
+
+permissions:
+  contents: write
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    if: github.event.head_commit.message == 'ci: stage Camera PR6 documentation reconciliation'
+    steps:
+      - name: Check out exact branch revision
+        uses: actions/checkout@v4
+        with:
+          ref: docs/camera-pr6-verification
+          fetch-depth: 0
+      - name: Reconcile verified Camera state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          FINAL_CANDIDATE = "a378a17d3e6cf28a16521428fa3d77c1910e2e53"
+          MAIN = "d5272da9877b47bfca1551784f32b1031a084a8e"
+
+          def replace(path, old, new, count=None):
+              p = Path(path)
+              text = p.read_text(encoding="utf-8")
+              found = text.count(old)
+              expected = 1 if count is None else count
+              if found != expected:
+                  raise SystemExit(f"{path}: expected {expected} occurrence(s), found {found}: {old[:90]!r}")
+              p.write_text(text.replace(old, new), encoding="utf-8")
+
+          # README.md
+          replace("README.md", "> Repository document version: **0.3.0**", "> Repository document version: **0.4.0**")
+          replace(
+              "README.md",
+              "This source milestone adds the first bounded still-photo path: JPEG output through Camera2, a user-triggerable engineering shutter, and scoped-storage MediaStore publication using an `IS_PENDING` row with failure cleanup. Runtime qualification for the photo path is part of the exact-revision CI gate and must pass before the source is treated as verified capture behavior.",
+              f"Authoritative `main` now includes the first bounded still-photo path: JPEG output through Camera2, a user-triggerable engineering shutter, and scoped-storage MediaStore publication using an `IS_PENDING` row with handled-failure cleanup. Final PR #6 candidate `{FINAL_CANDIDATE}` and signed merged commit `{MAIN}` both passed the representative Android 16 / API 36 emulator capture gate, which verified one non-zero published JPEG and its JPEG signature. This remains emulator evidence only and does not qualify a physical device."
+          )
+          replace("README.md", "- Candidate JPEG still capture using `TEMPLATE_STILL_CAPTURE` and `ImageReader`.", "- Verified representative-emulator JPEG still capture using `TEMPLATE_STILL_CAPTURE` and `ImageReader`.")
+          replace("README.md", "- Candidate MediaStore commit path to `DCIM/GoreeCloud Camera` using `IS_PENDING`, publish-after-write, and pending-row deletion on handled failure.", "- Verified representative-emulator MediaStore commit path to `DCIM/GoreeCloud Camera` using `IS_PENDING`, publish-after-write, and pending-row deletion on handled failure.")
+          replace("README.md", "- Current required Glaze UI consumer target: **1.4.1**.", "- Current required Glaze UI consumer target: **1.5.0**.")
+
+          # FEATURES.md
+          replace("FEATURES.md", "> Repository document version: **0.3.0**", "> Repository document version: **0.4.0**")
+          replace(
+              "FEATURES.md",
+              "The following bounded runtime behavior is verified on the representative Android 16 / API 36 virtual-camera CI configuration:\n\n- application installation and camera-only permission grant;\n- Camera2 device discovery;\n- selected emulated back-camera opening;\n- preview session configuration;\n- repeating preview reaching application state `PREVIEWING`.\n\nThis evidence does not qualify a physical device.\n\n## Implemented source functionality\n\nThe source additionally contains the first still-photo milestone:\n\n- JPEG output capability discovery;\n- JPEG `ImageReader` configured as a capture-session output;\n- one-shot `TEMPLATE_STILL_CAPTURE` request;\n- an engineering **Capture photo** control;\n- collision-resistant UTC timestamp naming;\n- MediaStore reservation in `DCIM/GoreeCloud Camera`;\n- `IS_PENDING=1` while the image is incomplete;\n- JPEG write and publish by clearing `IS_PENDING`;\n- pending-row deletion on handled capture/write failure;\n- no storage, media-library, Internet, location, or microphone permission expansion;\n- static source checks for the camera-only manifest and MediaStore/still-capture contract;\n- representative emulator CI intended to verify a non-zero published JPEG and JPEG signature.\n\nThe photo path is not a supported feature until its exact candidate and authoritative-main runtime qualification passes.",
+              f"The following bounded runtime behavior is verified on the representative Android 16 / API 36 virtual-camera CI configuration for both final PR #6 candidate `{FINAL_CANDIDATE}` and signed authoritative `main` commit `{MAIN}`:\n\n- application installation and camera-only permission grant;\n- Camera2 device discovery;\n- selected emulated back-camera opening;\n- preview session configuration;\n- repeating preview reaching application state `PREVIEWING`;\n- one explicit JPEG still-capture request;\n- publication of a matching non-zero MediaStore JPEG under `DCIM/GoreeCloud Camera`;\n- readback and JPEG-signature verification of the published artifact.\n\nThis evidence verifies the bounded path on the configured virtual camera only; it does not qualify a physical device or establish production support.\n\n## Implemented source functionality\n\nThe first still-photo milestone now includes:\n\n- JPEG output capability discovery;\n- JPEG `ImageReader` configured as a capture-session output;\n- one-shot `TEMPLATE_STILL_CAPTURE` request;\n- an engineering **Capture photo** control kept clear of bottom system UI through system-bar inset handling;\n- collision-resistant UTC timestamp naming;\n- MediaStore reservation in `DCIM/GoreeCloud Camera`;\n- `IS_PENDING=1` while the image is incomplete;\n- JPEG write and publish by clearing `IS_PENDING`;\n- pending-row deletion on handled capture/write failure;\n- no storage, media-library, Internet, location, or microphone permission expansion;\n- static source checks for the camera-only manifest, system-inset handling, and MediaStore/still-capture contract;\n- exact-revision representative-emulator qualification of the bounded JPEG publication path."
+          )
+
+          # FEATURE-ROADMAP.md
+          replace("FEATURE-ROADMAP.md", "> Repository document version: **0.3.0**", "> Repository document version: **0.4.0**")
+          replace(
+              "FEATURE-ROADMAP.md",
+              "Verified on authoritative `main` through documentation-reconciled commit `1687d81a65c037b46a25f98a23e5a0d1453e58de`:",
+              f"Verified on authoritative `main` through bounded JPEG-capture commit `{MAIN}`:"
+          )
+          replace(
+              "FEATURE-ROADMAP.md",
+              "PR #4 candidate `cdc59289c607558090c298ee74ae2829268920c1` passed Android Foundation run `35020668795`, including preview-runtime emulator qualification, and Platform Contract run `35020668711`. After merge, authoritative commit `6dbd2c1a5c5e3fb523662f5a6e181c6dbf73644a` passed Android Foundation run `35021425774` and Platform Contract run `35021428000`. Documentation reconciliation PR #5 then produced authoritative `main` commit `1687d81a65c037b46a25f98a23e5a0d1453e58de`, whose Android Foundation and Platform Contract gates also passed.",
+              f"PR #4 candidate `cdc59289c607558090c298ee74ae2829268920c1` passed Android Foundation run `35020668795`, including preview-runtime emulator qualification, and Platform Contract run `35020668711`. After merge, authoritative commit `6dbd2c1a5c5e3fb523662f5a6e181c6dbf73644a` passed Android Foundation run `35021425774` and Platform Contract run `35021428000`. Documentation reconciliation PR #5 then produced authoritative `main` commit `1687d81a65c037b46a25f98a23e5a0d1453e58de`, whose Android Foundation and Platform Contract gates also passed.\n\nPR #6 final candidate `{FINAL_CANDIDATE}` passed Android Foundation run `35083327911`, including the Android 16 / API 36 `capture-runtime-emulator` job, and Platform Contract run `35083328806`. PR #6 was squash-merged as signed authoritative `main` commit `{MAIN}`. Push-triggered Android Foundation run `35083832517` then passed both ordinary validation/build and the same JPEG + MediaStore runtime gate on the merged revision, while Platform Contract run `35083833021` also passed."
+          )
+          replace(
+              "FEATURE-ROADMAP.md",
+              "The representative emulator result proves that the current authoritative Camera2 preview path can open/configure and run a repeating preview against the configured Android virtual camera. It does **not** qualify a physical phone, prove OEM/device support, establish production UI acceptance, or prove a merged still/video capture path.",
+              "The representative emulator evidence proves that the current authoritative Camera2 path can open/configure a repeating preview and complete one bounded JPEG still capture through MediaStore on the configured Android virtual camera. It does **not** qualify a physical phone, prove OEM/device support, establish production UI acceptance, prove video/audio capture, or establish release readiness."
+          )
+          old_roadmap_block = """#### PR #6 — first bounded JPEG Photo + MediaStore candidate
+
+The active PR #6 source candidate adds the first bounded still-photo implementation while preserving product version `0.1.0`, Concept lifecycle, Platform Contract 0.2, the single Camera2 session authority, and the camera-only runtime permission boundary.
+
+Candidate source includes:
+
+- JPEG output-size discovery through the Capability Registry;
+- one JPEG `ImageReader` added to the existing Camera2 session outputs;
+- explicit engineering-stage **Capture photo** control and `CAPTURING` state;
+- one-shot `TEMPLATE_STILL_CAPTURE` requests;
+- deterministic UTC `GCAM_*.jpg` naming;
+- MediaStore reservation in `DCIM/GoreeCloud Camera` using `IS_PENDING=1`;
+- JPEG signature validation before publication;
+- publish-after-write by clearing `IS_PENDING`;
+- deletion of the pending MediaStore row on handled reserve/capture/write/finalization failure paths;
+- lifecycle cleanup of pending capture state and `ImageReader` resources;
+- no Internet, location, microphone, storage, all-files, or media-library read permission expansion;
+- source-contract validation, filename unit coverage, and an Android 16/API 36 emulator capture gate intended to verify a non-zero published JPEG and JPEG signature.
+
+This candidate implementation is **not yet authoritative `main` state** and must not be described as a supported Camera feature until the exact final PR head passes its required checks and the merged authoritative revision is independently revalidated. Physical-device support, production UI, process-death recovery, application-specific Platform System acceptance, Release Candidate, and Stable status remain unverified.
+
+Still required to complete Phase 1 after the bounded still-photo candidate is accepted:
+"""
+          new_roadmap_block = f"""#### PR #6 — first bounded JPEG Photo + MediaStore implementation
+
+PR #6 is implemented and verified on authoritative `main` while preserving product version `0.1.0`, Concept lifecycle, Platform Contract 0.2, the single Camera2 session authority, and the camera-only runtime permission boundary.
+
+Verified implementation includes:
+
+- JPEG output-size discovery through the Capability Registry;
+- one JPEG `ImageReader` added to the existing Camera2 session outputs;
+- explicit engineering-stage **Capture photo** control and `CAPTURING` state;
+- bottom-system-bar inset handling that keeps the engineering shutter clear of system navigation UI;
+- one-shot `TEMPLATE_STILL_CAPTURE` requests;
+- deterministic UTC `GCAM_*.jpg` naming;
+- MediaStore reservation in `DCIM/GoreeCloud Camera` using `IS_PENDING=1`;
+- JPEG signature validation before publication;
+- publish-after-write by clearing `IS_PENDING`;
+- deletion of the pending MediaStore row on handled reserve/capture/write/finalization failure paths;
+- lifecycle cleanup of pending capture state and `ImageReader` resources;
+- no Internet, location, microphone, storage, all-files, or media-library read permission expansion;
+- source-contract validation, filename unit coverage, and Android 16/API 36 emulator qualification that verified a non-zero published JPEG and JPEG signature on both the final candidate and merged authoritative revision.
+
+The runtime result is bounded representative-emulator evidence, not physical-device or production acceptance. Physical-device support, production UI, process-death recovery, application-specific Platform System acceptance, Release Candidate, and Stable status remain unverified.
+
+Still required to complete Phase 1:
+"""
+          replace("FEATURE-ROADMAP.md", old_roadmap_block, new_roadmap_block)
+
+          # SPECIFICATIONS.md
+          replace("SPECIFICATIONS.md", "> Repository document version: **0.3.0**", "> Repository document version: **0.4.0**")
+          replace(
+              "SPECIFICATIONS.md",
+              "This repository contains the **first native Android implementation foundation**, a verified representative Android-emulator preview path, and the active PR #6 candidate for the first bounded JPEG still-photo + MediaStore publication path.",
+              "This repository contains the **first native Android implementation foundation**, a verified representative Android-emulator preview path, and the first bounded JPEG still-photo + MediaStore publication path verified on authoritative `main` through PR #6."
+          )
+          replace(
+              "SPECIFICATIONS.md",
+              "- Documentation reconciliation PR #5 produced authoritative `main` commit `1687d81a65c037b46a25f98a23e5a0d1453e58de`, whose Android Foundation and Platform Contract workflows also passed.\n- The representative Android 16/API 36 emulator uses an emulated back camera and has reached `Session: previewing` with one detected virtual camera while only CAMERA permission is granted.\n- Runtime preview evidence includes UI hierarchy, screenshot, CameraService state, package/app-ops state, logcat, and provenance; it explicitly records `physical_device_qualification=false` and no Stable release authority.\n\nThe active PR #6 candidate additionally implements in source:\n\n- JPEG output-size discovery in the Capability Registry;\n- one JPEG `ImageReader` attached to the same Camera2 capture-session authority as preview;\n- explicit `CAPTURING` state and engineering-stage **Capture photo** control;\n- one-shot `TEMPLATE_STILL_CAPTURE` requests;\n- deterministic UTC `GCAM_*.jpg` naming;\n- MediaStore reservation under `DCIM/GoreeCloud Camera` using `IS_PENDING=1`;\n- JPEG signature validation before publication;\n- write-then-publish behavior that clears `IS_PENDING` only after successful output completion;\n- deletion of the pending row on handled reserve/capture/write/finalization failures;\n- cleanup of `ImageReader`, pending-photo state, and in-flight capture state through the existing session lifecycle;\n- filename unit coverage plus strengthened static source-contract validation;\n- an Android 16/API 36 emulator qualification path intended to trigger one photo, locate the published MediaStore row, require non-zero size, read the output, and verify its JPEG signature.\n\nThese PR #6 items remain **candidate state**, not authoritative `main` state, until the exact final PR head passes required checks and is merged. A prior runtime attempt on an earlier candidate failed because the Android emulator's Quickstep launcher became unresponsive before Camera reached preview; that attempt did not exercise the still-capture or MediaStore path and is not negative capture evidence.\n",
+              f"- Documentation reconciliation PR #5 produced authoritative `main` commit `1687d81a65c037b46a25f98a23e5a0d1453e58de`, whose Android Foundation and Platform Contract workflows also passed.\n- The representative Android 16/API 36 emulator uses an emulated back camera and has reached `Session: previewing` with one detected virtual camera while only CAMERA permission is granted.\n- Runtime preview evidence includes UI hierarchy, screenshot, CameraService state, package/app-ops state, logcat, and provenance; it explicitly records `physical_device_qualification=false` and no Stable release authority.\n- PR #6 final candidate `{FINAL_CANDIDATE}` passed Android Foundation run `35083327911`, including the Android 16/API 36 JPEG + MediaStore `capture-runtime-emulator` job, and Platform Contract run `35083328806`.\n- PR #6 was squash-merged as signed authoritative `main` commit `{MAIN}`. Push-triggered Android Foundation run `35083832517` passed ordinary validation/build plus the JPEG + MediaStore runtime gate on that exact merged revision, and Platform Contract run `35083833021` passed.\n\nPR #6 therefore implements and verifies on authoritative `main`:\n\n- JPEG output-size discovery in the Capability Registry;\n- one JPEG `ImageReader` attached to the same Camera2 capture-session authority as preview;\n- explicit `CAPTURING` state and engineering-stage **Capture photo** control;\n- bottom-system-bar inset handling that keeps the shutter clear of system navigation UI;\n- one-shot `TEMPLATE_STILL_CAPTURE` requests;\n- deterministic UTC `GCAM_*.jpg` naming;\n- MediaStore reservation under `DCIM/GoreeCloud Camera` using `IS_PENDING=1`;\n- JPEG signature validation before publication;\n- write-then-publish behavior that clears `IS_PENDING` only after successful output completion;\n- deletion of the pending row on handled reserve/capture/write/finalization failures;\n- cleanup of `ImageReader`, pending-photo state, and in-flight capture state through the existing session lifecycle;\n- filename unit coverage plus strengthened static source-contract validation;\n- representative Android 16/API 36 runtime qualification that triggered one photo, located the published non-zero MediaStore row, read the output, and verified its JPEG signature.\n\nEarlier runtime attempts exposed a case-sensitive shutter-selector defect, one Quickstep emulator ANR, and an engineering-shutter/system-taskbar overlap. Those failures did not establish a Camera2/MediaStore defect; the overlap was corrected with bottom system-bar inset handling, the runtime selector was constrained to the Camera package, and the final exact candidate plus merged authoritative revision subsequently passed.\n"
+          )
+          replace("SPECIFICATIONS.md", "- authoritative-main acceptance of the PR #6 JPEG + MediaStore path;\n", "")
+          replace("SPECIFICATIONS.md", "bounded JPEG still-capture candidate", "bounded JPEG still-capture path")
+          replace("SPECIFICATIONS.md", "No Glaze UI conformance is claimed by this foundation or PR #6 candidate.", "No Glaze UI conformance is claimed by the current engineering shell.")
+          replace("SPECIFICATIONS.md", "The bounded local JPEG candidate does not yet construct", "The bounded local JPEG implementation does not yet construct")
+          replace("SPECIFICATIONS.md", "including preview and candidate JPEG output sizes", "including preview and JPEG output sizes")
+          replace("SPECIFICATIONS.md", "The candidate still-photo path adds its JPEG output", "The still-photo path adds its JPEG output")
+          replace("SPECIFICATIONS.md", "**Camera Session Controller — Foundation implemented and representative-emulator preview qualified; still-capture extension in PR #6 candidate.**", "**Camera Session Controller — Foundation implemented; representative-emulator preview and bounded still capture qualified.**")
+          replace("SPECIFICATIONS.md", "preview start/stop, candidate one-shot JPEG capture", "preview start/stop, bounded one-shot JPEG capture")
+          replace("SPECIFICATIONS.md", "**Capability Registry — Foundation implemented; JPEG discovery added in PR #6 candidate.**", "**Capability Registry — Foundation implemented; JPEG discovery verified through PR #6.**")
+          replace("SPECIFICATIONS.md", "preview sizes, and candidate JPEG output sizes", "preview sizes, and JPEG output sizes")
+          replace("SPECIFICATIONS.md", "**Photo Capture Engine — Bounded candidate implementation.**", "**Photo Capture Engine — Bounded representative-emulator-qualified implementation.**")
+          replace("SPECIFICATIONS.md", "**Storage Coordinator — Partially implemented in PR #6 candidate.**", "**Storage Coordinator — Partially implemented and representative-emulator qualified through PR #6.**")
+          replace("SPECIFICATIONS.md", "PR #6 adds a bounded engineering-stage JPEG shutter and MediaStore publication candidate.", "PR #6 adds and verifies a bounded engineering-stage JPEG shutter and MediaStore publication path on the representative Android virtual camera.")
+          replace("SPECIFICATIONS.md", "PR #6's bounded still candidate creates only a newly captured JPEG", "PR #6's bounded still implementation creates only a newly captured JPEG")
+          replace("SPECIFICATIONS.md", "plus preview/JPEG output-size selection;", "plus preview/JPEG output-size selection;")
+          replace("SPECIFICATIONS.md", "preview and candidate still-capture resources;", "preview and bounded still-capture resources;")
+          replace("SPECIFICATIONS.md", "for candidate pending-row reservation", "for pending-row reservation")
+          replace("SPECIFICATIONS.md", "The current foundation and PR #6 candidate have no account", "The current foundation and bounded PR #6 still-capture implementation have no account")
+          replace("SPECIFICATIONS.md", "The foundation and PR #6 candidate intentionally do **not** request:", "The current implementation intentionally does **not** request:")
+          replace("SPECIFICATIONS.md", "The PR #6 candidate persists only the JPEG", "The bounded PR #6 implementation persists only the JPEG")
+          replace("SPECIFICATIONS.md", "Candidate still output is held as a pending MediaStore item", "Still output is held as a pending MediaStore item")
+          replace("SPECIFICATIONS.md", "stable content description for the candidate shutter", "stable content description for the engineering shutter")
+          replace("SPECIFICATIONS.md", "The PR #6 candidate adds handled in-process still-capture cleanup", "PR #6 adds handled in-process still-capture cleanup")
+          old_testing = """- an active PR #6 exact-revision runtime gate that installs the APK, grants only CAMERA permission, requires preview readiness, locates the shutter through its stable accessibility description, triggers one capture, requires a `Photo saved` result, locates the matching non-zero JPEG in `MediaStore.Images/external_primary/DCIM/GoreeCloud Camera`, reads the item back, verifies the JPEG signature, and preserves local runtime evidence;
+- successful PR #4 candidate validation in Android Foundation run `35020668795` and Platform Contract run `35020668711` for `cdc59289c607558090c298ee74ae2829268920c1`;
+- successful post-merge exact-main Android Foundation run `35021425774` and Platform Contract run `35021428000` for `6dbd2c1a5c5e3fb523662f5a6e181c6dbf73644a`;
+- successful documentation-reconciled authoritative-main validation after PR #5.
+
+The PR #6 runtime gate must pass on the exact final candidate head before merge, and the authoritative merged revision must be independently revalidated before the still-photo path is described as verified authoritative behavior. An emulator infrastructure failure before the application reaches preview is not evidence that Camera2 still capture or MediaStore publication failed.
+"""
+          new_testing = f"""- exact-revision PR #6 runtime qualification that installs the APK, grants only CAMERA permission, requires preview readiness, locates an enabled shutter owned by `com.goreecloud.camera` through its stable accessibility description, preserves pre-capture bounds/tap evidence, triggers one capture, requires a `Photo saved` result, locates the matching non-zero JPEG in `MediaStore.Images/external_primary/DCIM/GoreeCloud Camera`, reads the item back, verifies the JPEG signature, and preserves local runtime evidence;
+- successful PR #4 candidate validation in Android Foundation run `35020668795` and Platform Contract run `35020668711` for `cdc59289c607558090c298ee74ae2829268920c1`;
+- successful post-merge exact-main Android Foundation run `35021425774` and Platform Contract run `35021428000` for `6dbd2c1a5c5e3fb523662f5a6e181c6dbf73644a`;
+- successful documentation-reconciled authoritative-main validation after PR #5;
+- successful PR #6 final-candidate Android Foundation run `35083327911` and Platform Contract run `35083328806` for `{FINAL_CANDIDATE}`, including the JPEG + MediaStore emulator capture gate;
+- successful PR #6 post-merge Android Foundation run `35083832517` and Platform Contract run `35083833021` for signed authoritative `main` commit `{MAIN}`, including independent revalidation of the same bounded runtime capture path.
+
+The final PR #6 candidate and authoritative merged revision both satisfy the bounded still-photo acceptance gate. Earlier harness/emulator failures are retained as troubleshooting history rather than treated as negative capture evidence because they did not exercise the intended Camera2/MediaStore transaction to completion.
+"""
+          replace("SPECIFICATIONS.md", old_testing, new_testing)
+          replace("SPECIFICATIONS.md", "This foundation and PR #6 candidate are not a release candidate and are not production accepted.", "This Concept-stage foundation and bounded still-photo implementation are not a release candidate and are not production accepted.")
+          replace(
+              "SPECIFICATIONS.md",
+              "PR #6 is the current bounded milestone and must first satisfy exact-head CI, exact-head representative emulator JPEG + MediaStore qualification, merge review, and authoritative-main revalidation.\n\nAfter that acceptance, the next Phase 1 implementation slice should remain bounded and should advance **basic Video/audio capture**",
+              "PR #6 has satisfied exact-head CI, exact-head representative emulator JPEG + MediaStore qualification, merge review, and authoritative-main revalidation.\n\nThe next Phase 1 implementation slice should remain bounded and should advance **basic Video/audio capture**"
+          )
+
+          # USER-MANUAL.md
+          replace("USER-MANUAL.md", "> Repository document version: **0.3.0**", "> Repository document version: **0.4.0**")
+          replace("USER-MANUAL.md", "6. On a successful candidate path, the status shows `Photo saved: <filename>`", "6. On the verified bounded path, the status shows `Photo saved: <filename>`")
+          replace(
+              "USER-MANUAL.md",
+              "A central GoreeCloud User Manuals copy has not yet been verified for Camera and remains a documentation follow-up.",
+              "The required GoreeCloud-wide representation is `GoreeCloud/User Manuals/User Manual — GoreeCloud Camera.md`; this repository `USER-MANUAL.md` remains the canonical editable source."
+          )
+
+          # goreecloud.platform.yaml
+          replace("goreecloud.platform.yaml", "The current candidate remains camera-only", "The current implementation remains camera-only")
+          replace("goreecloud.platform.yaml", "the candidate uses pending MediaStore publication", "the implementation uses pending MediaStore publication")
+          replace("goreecloud.platform.yaml", "The candidate implements a bounded ordinary-JPEG MediaStore finalization path", "The implementation includes a bounded ordinary-JPEG MediaStore finalization path")
+          replace("goreecloud.platform.yaml", "the current candidate.", "the current bounded implementation.")
+          replace("goreecloud.platform.yaml", "The bounded still-photo candidate publishes ordinary JPEG files", "The bounded still-photo implementation publishes ordinary JPEG files")
+          replace("goreecloud.platform.yaml", '    - "The PR #6 JPEG + MediaStore path remains a candidate until exact-head and authoritative-main runtime gates pass."\n', "")
+
+          # Fail if known misleading pre-acceptance statements survive.
+          forbidden = {
+              "FEATURE-ROADMAP.md": ["active PR #6 source candidate", "not yet authoritative `main` state"],
+              "SPECIFICATIONS.md": ["active PR #6 candidate", "remain **candidate state**", "authoritative-main acceptance of the PR #6"],
+              "README.md": ["Current required Glaze UI consumer target: **1.4.1**", "Candidate JPEG still capture"],
+              "FEATURES.md": ["The photo path is not a supported feature until"],
+              "goreecloud.platform.yaml": ["PR #6 JPEG + MediaStore path remains a candidate"],
+          }
+          for path, needles in forbidden.items():
+              text = Path(path).read_text(encoding="utf-8")
+              for needle in needles:
+                  if needle in text:
+                      raise SystemExit(f"{path}: stale statement survived: {needle}")
+
+          # Preserve lifecycle and product identity.
+          for path in ["README.md", "FEATURES.md", "FEATURE-ROADMAP.md", "SPECIFICATIONS.md", "USER-MANUAL.md"]:
+              text = Path(path).read_text(encoding="utf-8")
+              if "0.1.0" not in text or "Concept" not in text:
+                  raise SystemExit(f"{path}: product/lifecycle identity unexpectedly missing")
+          platform = Path("goreecloud.platform.yaml").read_text(encoding="utf-8")
+          if 'lifecycle: concept' not in platform or 'version: "0.1.0"' not in platform or 'glaze_ui_required: "1.5.0"' not in platform:
+              raise SystemExit("platform declaration identity/Glaze target drifted")
+          PY
+
+          rm .github/workflows/reconcile-camera-pr6-docs.yml
+          git config user.name "GoreeCloud"
+          git config user.email "295260680+GoreeCloud@users.noreply.github.com"
+          git add README.md FEATURES.md FEATURE-ROADMAP.md SPECIFICATIONS.md USER-MANUAL.md goreecloud.platform.yaml .github/workflows/reconcile-camera-pr6-docs.yml
+          git diff --cached --check
+          git commit -m "docs: reconcile Camera PR6 verified state"
+          git push origin HEAD:docs/camera-pr6-verification
