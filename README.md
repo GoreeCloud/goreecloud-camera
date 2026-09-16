@@ -1,6 +1,6 @@
 # GoreeCloud Camera
 
-> Repository document version: **0.4.0**  
+> Repository document version: **0.5.0**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**
 
@@ -8,9 +8,11 @@ GoreeCloud Camera is the first-party photography, video, scanning, and creative-
 
 ## Current state
 
-The authoritative foundation is a native Android Camera2 implementation. Representative Android 16 / API 36 virtual-camera qualification has verified that the current preview path reaches `PREVIEWING`; this is emulator evidence only and does not qualify a physical device.
+The authoritative foundation is a native Android Camera2 implementation. Representative Android 16 / API 36 virtual-camera qualification has verified the preview path and one bounded JPEG still-capture + MediaStore publication path. This is representative-emulator evidence only and does not qualify a physical device.
 
-Authoritative `main` now includes the first bounded still-photo path: JPEG output through Camera2, a user-triggerable engineering shutter, and scoped-storage MediaStore publication using an `IS_PENDING` row with handled-failure cleanup. Final PR #6 candidate `a378a17d3e6cf28a16521428fa3d77c1910e2e53` and signed merged commit `d5272da9877b47bfca1551784f32b1031a084a8e` both passed the representative Android 16 / API 36 emulator capture gate, which verified one non-zero published JPEG and its JPEG signature. This remains emulator evidence only and does not qualify a physical device.
+Authoritative `main` now also includes the first bounded video/audio **source and build** foundation from PR #8, merged as signed commit `f6d414049f6ad4792a70da00903fead403dde58c`. It adds capability-gated Camera2/MediaRecorder MP4 recording using H.264 video and AAC microphone audio, deterministic UTC MP4 naming, pending MediaStore publication/cleanup, explicit recording state, microphone hardware gating, and just-in-time microphone permission requested only after a deliberate Record-video action. Exact PR-head Android Foundation run `35101834080` and Platform Contract run `35101835061` passed.
+
+The Android emulator gate used for PR #8 re-qualified the existing preview/JPEG path only. It did **not** exercise video recording, audio capture, or microphone routing. Video/audio runtime support therefore remains unqualified.
 
 The release lifecycle remains **Concept**. Emulator success, source presence, and a buildable APK do not establish supported devices, production UI acceptance, or release readiness.
 
@@ -20,23 +22,27 @@ The release lifecycle remains **Concept**. Emulator success, source presence, an
 - Product version: `0.1.0`.
 - Compile/target baseline: Android 17 / API 37; provisional minimum SDK: API 29.
 - JDK 17, Android Gradle Plugin 9.4.0, and Gradle 9.6.0 in CI.
-- Runtime manifest requests only `android.permission.CAMERA`.
+- Runtime manifest requests `android.permission.CAMERA` and `android.permission.RECORD_AUDIO`.
+- Camera permission is needed for preview/capture; microphone permission is requested only when the user deliberately chooses video recording with audio.
 - Camera2 device enumeration, capability profiles, deterministic default-camera selection, and lifecycle-owned session control.
 - Representative Android 16 / API 36 emulated-back-camera preview qualification.
 - Verified representative-emulator JPEG still capture using `TEMPLATE_STILL_CAPTURE` and `ImageReader`.
-- Verified representative-emulator MediaStore commit path to `DCIM/GoreeCloud Camera` using `IS_PENDING`, publish-after-write, and pending-row deletion on handled failure.
-- No Internet, location, microphone, storage, broad media-library, or all-files permission.
-- Exact-revision lint, unit tests, APK build/provenance, Platform Contract validation, and emulator capture qualification.
+- Verified representative-emulator MediaStore photo commit path to `DCIM/GoreeCloud Camera` using `IS_PENDING`, publish-after-write, and pending-row deletion on handled failure.
+- Bounded source/build implementation for Camera2/MediaRecorder MP4 recording using H.264 video plus AAC microphone audio.
+- Deterministic UTC `GCAM_*.mp4` naming and pending MediaStore video publication/cleanup.
+- No Internet, location, broad storage, all-files, or media-library read permission.
+- Exact-revision source checks, lint, unit tests, APK build/provenance, Platform Contract validation, and preview/JPEG emulator regression qualification.
 
 ## Still open
 
-- physical-device preview and still-capture qualification;
-- video/audio capture;
+- video/audio runtime qualification and microphone-routing evidence on an audio-capable representative target;
+- physical-device preview, still, and video/audio qualification;
+- local settings foundation;
 - zoom/focus/exposure and lens-switching controls;
-- robust process-death/interrupted-capture recovery;
+- robust process-death/interrupted-capture and interrupted-recording recovery;
 - production Glaze UI implementation and acceptance;
 - Privacy Shield, Wardveil Security, Everkeep, Manager, Mesh, and Identity application acceptance where applicable;
-- device-specific qualification profiles;
+- device-specific qualification profiles and camera-quirk evidence;
 - Private Capture, richer metadata/provenance controls, and Gallery/Photos handoff;
 - production signing/release and Stable qualification;
 - recognized open-source license selection.
@@ -53,7 +59,7 @@ The CI debug APK remains an engineering artifact only.
 
 ## Privacy boundary
 
-The manifest remains camera-only. Android 10+ MediaStore lets Camera publish media that it creates without requesting storage or media-library permissions. The initial photo path writes only the newly reserved output owned by this app; it does not read the user's existing media library, use location, record audio, or use the network.
+Core capture remains local and offline-first. Android 10+ MediaStore lets Camera publish media that it creates without requesting broad storage or media-library read permissions. Camera currently uses camera authority for preview/capture and microphone authority only for the explicit video-with-audio workflow. It does not request Internet or location authority, and it does not read the user's existing media library as part of the current milestones.
 
 ## GoreeCloud platform direction
 
@@ -82,4 +88,4 @@ A recognized open-source license has not yet been selected and committed. Reposi
 
 ## Status integrity
 
-The current work does not prove Experimental lifecycle eligibility, physical-device support, Glaze UI conformance, Privacy Shield acceptance, Wardveil acceptance, production readiness, or Stable status.
+The current work does not prove Experimental lifecycle eligibility, physical-device support, video/audio runtime support, Glaze UI conformance, Privacy Shield acceptance, Wardveil acceptance, production readiness, or Stable status.
