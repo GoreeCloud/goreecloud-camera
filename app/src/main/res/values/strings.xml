@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- File internal version: 0.2.0 -->
+<!-- File internal version: 0.4.0 -->
 <resources>
     <string name="app_name">GoreeCloud Camera</string>
     <string name="engineering_shell">GoreeCloud Camera · engineering capture shell · Glaze UI pending</string>
@@ -15,4 +15,19 @@
     <string name="photo_capture_in_progress">Capturing photo…</string>
     <string name="photo_saved">Photo saved: %1$s</string>
     <string name="photo_failed">Photo failed: %1$s</string>
+    <string name="video_status_checking">Video/audio capability checking…</string>
+    <string name="video_status_ready">Video with microphone audio ready</string>
+    <string name="video_status_needs_microphone">Microphone permission is required only when starting video with audio.</string>
+    <string name="video_status_permission_granted">Microphone permission granted · tap Record video to start.</string>
+    <string name="video_status_permission_denied">Microphone permission was not granted · video/audio recording remains off.</string>
+    <string name="video_status_unavailable">Video/audio recording unavailable on this camera or device.</string>
+    <string name="video_starting">Starting video with microphone audio…</string>
+    <string name="video_recording">Recording video · microphone active</string>
+    <string name="video_stopping">Stopping and saving video…</string>
+    <string name="video_saved">Video saved: %1$s</string>
+    <string name="video_failed">Video failed: %1$s</string>
+    <string name="record_video">Record video</string>
+    <string name="stop_video">Stop and save video</string>
+    <string name="record_video_content_description">Record an MP4 video with microphone audio</string>
+    <string name="stop_video_content_description">Stop and save the active video and microphone recording</string>
 </resources>
