@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# File internal version: 0.2.0
+# File internal version: 0.3.0
 from pathlib import Path
 import re
 import sys
@@ -8,6 +8,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 APP_GRADLE = ROOT / "app" / "build.gradle.kts"
 MANIFEST = ROOT / "app" / "src" / "main" / "AndroidManifest.xml"
+MAIN_ACTIVITY = ROOT / "app" / "src" / "main" / "kotlin" / "com" / "goreecloud" / "camera" / "MainActivity.kt"
 CONTROLLER = ROOT / "app" / "src" / "main" / "kotlin" / "com" / "goreecloud" / "camera" / "camera" / "CameraSessionController.kt"
 MEDIA_COMMITTER = ROOT / "app" / "src" / "main" / "kotlin" / "com" / "goreecloud" / "camera" / "storage" / "PhotoMediaStoreCommitter.kt"
 
@@ -26,7 +27,7 @@ REQUIRED_FILES = [
     ROOT / "gradle.properties",
     APP_GRADLE,
     MANIFEST,
-    ROOT / "app" / "src" / "main" / "kotlin" / "com" / "goreecloud" / "camera" / "MainActivity.kt",
+    MAIN_ACTIVITY,
     ROOT / "app" / "src" / "main" / "kotlin" / "com" / "goreecloud" / "camera" / "camera" / "CameraCapabilityRegistry.kt",
     CONTROLLER,
     ROOT / "app" / "src" / "main" / "kotlin" / "com" / "goreecloud" / "camera" / "storage" / "PhotoFileNamer.kt",
@@ -80,6 +81,16 @@ if permissions != {"android.permission.CAMERA"}:
 for forbidden in sorted(FORBIDDEN_PERMISSIONS):
     if forbidden in permissions:
         fail(f"unexpected sensitive permission in capture milestone: {forbidden}")
+
+activity_text = MAIN_ACTIVITY.read_text(encoding="utf-8")
+for required_fragment in (
+    "setOnApplyWindowInsetsListener",
+    "WindowInsets.Type.systemBars()",
+    "systemWindowInsetBottom",
+    "capturePaddingBottom + bottomSystemInset",
+):
+    if required_fragment not in activity_text:
+        fail(f"capture controls must remain clear of bottom system UI: {required_fragment}")
 
 controller_text = CONTROLLER.read_text(encoding="utf-8")
 if "CameraDevice.TEMPLATE_STILL_CAPTURE" not in controller_text:
