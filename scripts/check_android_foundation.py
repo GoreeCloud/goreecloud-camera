@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# File internal version: 0.4.1
+# File internal version: 0.4.2
 from pathlib import Path
 import re
 import sys
@@ -152,11 +152,14 @@ video_committer_text = VIDEO_COMMITTER.read_text(encoding="utf-8")
 for required_fragment in (
     "MediaStore.Video.Media.IS_PENDING",
     "MediaStore.Video.Media.RELATIVE_PATH",
-    "MediaStore.Video.Media.SIZE",
     "MediaStore.VOLUME_EXTERNAL_PRIMARY",
+    "android.system.Os",
+    "Os.fstat(pendingVideo.fileDescriptor.fileDescriptor).st_size",
 ):
     if required_fragment not in video_committer_text:
         fail(f"MediaStore video contract is missing: {required_fragment}")
+if "MediaStore.Video.Media.SIZE" in video_committer_text:
+    fail("pending video publication must validate the open descriptor, not stale MediaStore SIZE metadata")
 
 video_namer_text = VIDEO_NAMER.read_text(encoding="utf-8")
 if '"GCAM_${formatter.format(Instant.ofEpochMilli(epochMillis))}.mp4"' not in video_namer_text:
