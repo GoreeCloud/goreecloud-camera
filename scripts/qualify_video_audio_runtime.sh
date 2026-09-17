@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# File internal version: 0.1.0
+# File internal version: 0.2.0
 set -euo pipefail
 
 readonly APP_ID="com.goreecloud.camera"
@@ -34,6 +34,21 @@ dump_window_to() {
 
 current_window() {
   dump_window_to "$EVIDENCE_ROOT/window.xml"
+}
+
+microphone_permission_state() {
+  local destination="$1"
+  adb shell dumpsys package "$APP_ID" > "$destination"
+  python3 - "$destination" <<'PY'
+import re
+import sys
+
+text = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+match = re.search(r"android\.permission\.RECORD_AUDIO:\s+granted=(true|false)", text)
+if not match:
+    raise SystemExit("RECORD_AUDIO runtime permission state was not found in dumpsys package output")
+print("granted" if match.group(1) == "true" else "denied")
+PY
 }
 
 capture_evidence() {
@@ -74,6 +89,7 @@ product_version=0.1.0
 lifecycle=Concept
 runtime=Android-16-API-36-emulator
 camera_source=Android-emulated-back-camera
+host_audio_source=local-PulseAudio-null-sink-monitor
 permission_scope=android.permission.CAMERA-plus-just-in-time-android.permission.RECORD_AUDIO
 microphone_permission_denied_before_record_intent=$permission_denied_before_intent
 microphone_permission_prompt_observed=$permission_prompt_observed
@@ -118,7 +134,7 @@ if ! grep -q 'feature:android.hardware.microphone' "$EVIDENCE_ROOT/device-featur
   exit 1
 fi
 
-microphone_permission_before="$(adb shell pm check-permission android.permission.RECORD_AUDIO "$APP_ID" 2>/dev/null | tr -d '\r')"
+microphone_permission_before="$(microphone_permission_state "$EVIDENCE_ROOT/package-before-record-intent.txt")"
 printf '%s\n' "$microphone_permission_before" > "$EVIDENCE_ROOT/microphone-permission-before.txt"
 if [ "$microphone_permission_before" != "denied" ]; then
   echo "Microphone permission must be denied before deliberate recording intent; observed: $microphone_permission_before" >&2
@@ -243,15 +259,16 @@ read -r permission_x permission_y <<< "$permission_tap"
 printf 'x=%s\ny=%s\n' "$permission_x" "$permission_y" > "$EVIDENCE_ROOT/microphone-permission-tap.txt"
 adb shell input tap "$permission_x" "$permission_y"
 
+microphone_permission_after="unknown"
 for attempt in $(seq 1 20); do
-  microphone_permission_after="$(adb shell pm check-permission android.permission.RECORD_AUDIO "$APP_ID" 2>/dev/null | tr -d '\r')"
+  microphone_permission_after="$(microphone_permission_state "$EVIDENCE_ROOT/package-after-permission.txt")"
   if [ "$microphone_permission_after" = "granted" ]; then
     permission_granted_after_prompt=1
     break
   fi
   sleep 1
 done
-printf '%s\n' "${microphone_permission_after:-unknown}" > "$EVIDENCE_ROOT/microphone-permission-after.txt"
+printf '%s\n' "$microphone_permission_after" > "$EVIDENCE_ROOT/microphone-permission-after.txt"
 
 if [ "$permission_granted_after_prompt" -ne 1 ]; then
   echo "Microphone permission was not granted through the observed runtime prompt." >&2
