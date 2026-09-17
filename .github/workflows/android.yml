@@ -1,4 +1,4 @@
-# File internal version: 0.4.0
+# File internal version: 0.6.0
 name: Android Foundation
 
 on:
@@ -79,7 +79,7 @@ jobs:
           yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses >/dev/null || true
           "$SDKMANAGER" --sdk_root="$SDK_ROOT" --channel=3 "platforms;android-37.0" "build-tools;36.0.0"
 
-      - name: Verify foundation and photo-capture source contract
+      - name: Verify capture source contract
         run: python3 scripts/check_android_foundation.py
 
       - name: Lint, unit test, and assemble debug APK
@@ -212,3 +212,95 @@ jobs:
           name: goreecloud-camera-runtime-capture
           if-no-files-found: error
           path: runtime-capture-evidence/*
+
+  video-audio-runtime-emulator:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out exact candidate revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Verify exact video/audio candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPECTED_SOURCE_SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          test "$SOURCE_SHA" = "$EXPECTED_SOURCE_SHA"
+          echo "SOURCE_SHA=$SOURCE_SHA" >> "$GITHUB_ENV"
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle 9.6.0
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.6.0"
+
+      - name: Provision current Android command-line tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOOLS_VERSION="15859902"
+          TOOLS_SHA256="4e4c464f145a7512b57d088ac6c278c03c9eea610886b35a5e0804e74eedf583"
+          TOOLS_ZIP="$RUNNER_TEMP/commandlinetools-linux-${TOOLS_VERSION}_latest.zip"
+          TOOLS_ROOT="$RUNNER_TEMP/android-command-line-tools"
+          TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-${TOOLS_VERSION}_latest.zip"
+
+          curl --fail --location --silent --show-error "$TOOLS_URL" --output "$TOOLS_ZIP"
+          echo "$TOOLS_SHA256  $TOOLS_ZIP" | sha256sum --check --strict
+          rm -rf "$TOOLS_ROOT"
+          mkdir -p "$TOOLS_ROOT/latest"
+          unzip -q "$TOOLS_ZIP" -d "$TOOLS_ROOT/unpacked"
+          mv "$TOOLS_ROOT/unpacked/cmdline-tools"/* "$TOOLS_ROOT/latest/"
+          rm -rf "$TOOLS_ROOT/unpacked"
+          echo "ANDROID_CMDLINE_TOOLS=$TOOLS_ROOT/latest/bin" >> "$GITHUB_ENV"
+
+      - name: Install Android 17 compile SDK and ffprobe
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$ANDROID_CMDLINE_TOOLS/sdkmanager"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses >/dev/null || true
+          "$SDKMANAGER" --sdk_root="$SDK_ROOT" --channel=3 "platforms;android-37.0" "build-tools;36.0.0"
+          if ! command -v ffprobe >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          ffprobe -version | head -n 1
+
+      - name: Enable KVM group permissions
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Qualify explicit-permission video/audio capture on Android 16 representative emulator
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 36
+          target: default
+          arch: x86_64
+          profile: pixel_5
+          disable-animations: true
+          pre-emulator-launch-script: bash scripts/prepare_virtual_audio.sh
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-boot-anim -camera-back emulated -camera-front none
+          script: bash scripts/qualify_video_audio_runtime.sh
+
+      - name: Upload runtime video/audio evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: goreecloud-camera-runtime-video-audio
+          if-no-files-found: error
+          path: runtime-video-audio-evidence/*
