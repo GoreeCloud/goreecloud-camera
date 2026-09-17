@@ -1,4 +1,4 @@
-// File internal version: 0.1.0
+// File internal version: 0.2.0
 package com.goreecloud.camera.storage
 
 import android.content.ContentResolver
@@ -6,6 +6,7 @@ import android.content.ContentValues
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
+import android.system.Os
 
 data class PendingVideo(
     val uri: Uri,
@@ -41,21 +42,14 @@ class VideoMediaStoreCommitter(
 
     fun publish(pendingVideo: PendingVideo): Uri {
         try {
-            runCatching { pendingVideo.fileDescriptor.close() }
-
-            val size = contentResolver.query(
-                pendingVideo.uri,
-                arrayOf(MediaStore.Video.Media.SIZE),
-                null,
-                null,
-                null,
-            )?.use { cursor ->
-                if (cursor.moveToFirst()) cursor.getLong(0) else 0L
-            } ?: 0L
-
-            if (size <= 0L) {
+            // MediaStore SIZE metadata can remain stale while a row is still pending.
+            // Validate the actual recorder destination before closing it or clearing IS_PENDING.
+            val recordedSize = Os.fstat(pendingVideo.fileDescriptor.fileDescriptor).st_size
+            if (recordedSize <= 0L) {
                 throw IllegalStateException("Recorded video is empty")
             }
+
+            pendingVideo.fileDescriptor.close()
 
             val published = contentResolver.update(
                 pendingVideo.uri,
