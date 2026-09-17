@@ -1,4 +1,4 @@
-# File internal version: 0.5.0
+# File internal version: 0.6.0
 name: Android Foundation
 
 on:
@@ -293,6 +293,7 @@ jobs:
           arch: x86_64
           profile: pixel_5
           disable-animations: true
+          pre-emulator-launch-script: bash scripts/prepare_virtual_audio.sh
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-boot-anim -camera-back emulated -camera-front none
           script: bash scripts/qualify_video_audio_runtime.sh
 
