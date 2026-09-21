@@ -180,9 +180,17 @@ class MainActivity : Activity() {
         }
         root.addView(previewView, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
 
+        val topPanelPaddingHorizontal = dp(16)
+        val topPanelPaddingTop = dp(12)
+        val topPanelPaddingBottom = dp(12)
         val topPanel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(12), dp(16), dp(12))
+            setPadding(
+                topPanelPaddingHorizontal,
+                topPanelPaddingTop,
+                topPanelPaddingHorizontal,
+                topPanelPaddingBottom,
+            )
             setBackgroundColor(Color.argb(168, 0, 0, 0))
         }
 
@@ -270,12 +278,29 @@ class MainActivity : Activity() {
         )
 
         root.setOnApplyWindowInsetsListener { _, insets ->
-            val bottomSystemInset = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                insets.getInsets(WindowInsets.Type.systemBars()).bottom
+            val systemInsets = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                insets.getInsets(WindowInsets.Type.systemBars())
+            } else {
+                null
+            }
+            val topSystemInset = if (systemInsets != null) {
+                systemInsets.top
+            } else {
+                @Suppress("DEPRECATION")
+                insets.systemWindowInsetTop
+            }
+            val bottomSystemInset = if (systemInsets != null) {
+                systemInsets.bottom
             } else {
                 @Suppress("DEPRECATION")
                 insets.systemWindowInsetBottom
             }
+            topPanel.setPadding(
+                topPanelPaddingHorizontal,
+                topPanelPaddingTop + topSystemInset,
+                topPanelPaddingHorizontal,
+                topPanelPaddingBottom,
+            )
             capturePanel.setPadding(
                 capturePaddingHorizontal,
                 capturePaddingTop,
