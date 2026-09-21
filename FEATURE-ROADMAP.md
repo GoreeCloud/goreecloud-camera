@@ -154,7 +154,7 @@ Private Capture, protected destinations, metadata policy, sharing-time privacy c
 ### Phase 9 — GoreeCloud ecosystem integration
 Status: **Planned**
 
-Platform Contract 0.2 evaluation against exactly seven Integral Platform Systems and evidence-backed Gallery/Photos/Everkeep/Privacy Shield/Wardveil/Manager/Mesh/Identity relationships. GoreeCloud Sync remains separately governed. Glaze UI migration must use the current approved Stable contract when production UI implementation begins; no application-specific Glaze acceptance is claimed by the current engineering shell.
+Platform Contract 0.4 evaluation against exactly nine Integral Platform Systems: Manager, Privacy Shield, Wardveil Security, Everkeep, Glaze UI, Mesh, Identity, Policy, and Observability. GoreeCloud Sync remains separately governed. GLAZE UI migration must target current Official Stable V1.6 / 1.6.0 and remain repository-locally acceptance-gated; no application-specific Glaze acceptance is claimed by the current engineering shell.
 
 ### Phase 10 — Remote and adaptive hardware experiences
 Status: **Planned**

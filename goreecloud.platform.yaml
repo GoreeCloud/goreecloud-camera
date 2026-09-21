@@ -1,8 +1,8 @@
 # GoreeCloud Camera Platform Contract declaration
-# File internal version: 0.2.0
+# File internal version: 0.4.0
 # Declaration validity does not prove implementation or acceptance.
 
-schema_version: "0.2"
+schema_version: "0.4"
 
 component:
   type: application
@@ -30,7 +30,7 @@ platform_systems:
     result: applicable-blocked
     version: null
     evidence: []
-    notes: "The current implementation remains camera-only for runtime permission scope and has no network, location, audio, or existing-media-library read permission; Privacy Shield runtime integration is still unimplemented and unaccepted."
+    notes: "Current capture is local/offline, uses CAMERA plus just-in-time RECORD_AUDIO only for explicit video recording, and requests no Internet, location, broad-storage, or existing-media-library read authority; accepted Privacy Shield runtime policy and production privacy acceptance remain unestablished."
   wardveil_security:
     result: applicable-blocked
     version: null
@@ -42,10 +42,14 @@ platform_systems:
     evidence: []
     notes: "The implementation includes a bounded ordinary-JPEG MediaStore finalization path, but Everkeep continuity, preservation, portability acceptance, and runtime integration do not yet exist."
   glaze_ui:
-    result: applicable-blocked
+    result: applicable-migration-required
     version: null
-    evidence: []
-    notes: "Glaze UI 1.5.0 is the current approved Stable consumer target. The engineering Camera shell has not implemented or accepted that contract."
+    evidence:
+      - README.md
+      - SPECIFICATIONS.md
+      - NOTES.md
+      - app/src/main/kotlin/com/goreecloud/camera/MainActivity.kt
+    notes: "The engineering Camera shell has no repository-local Glaze implementation. Current Official Stable consumer authority is GLAZE UI V1.6 / 1.6.0 at accepted release source a7180679ea851389e0f3004515f9a25f420e716d; deliberate migration and application-specific acceptance remain required."
   mesh:
     result: applicable-blocked
     version: null
@@ -58,8 +62,30 @@ platform_systems:
   identity:
     result: applicable-blocked
     version: null
-    evidence: []
-    notes: "Core local preview and bounded local JPEG capture do not require identity; optional identity-bound workflows remain unimplemented and unaccepted."
+    evidence:
+      - SPECIFICATIONS.md
+      - FEATURE-ROADMAP.md
+    notes: "Core local capture does not require GoreeCloud Identity; future account-bound, remote, Lens, provenance, sharing, or synchronized workflows still require accepted Identity runtime boundaries."
+
+  policy:
+    result: applicable-blocked
+    version: null
+    evidence:
+      - SPECIFICATIONS.md
+      - PRIVACY POLICY.md
+      - SECURITY.md
+    notes: "GoreeCloud Policy is applicable to future capture, privacy, security, metadata, remote, Lens, and consequential decisions, but no accepted Camera Policy runtime integration exists."
+
+  observability:
+    result: applicable-blocked
+    version: null
+    evidence:
+      - SPECIFICATIONS.md
+      - README.md
+      - .github/workflows/android.yml
+      - scripts/qualify_preview_runtime.sh
+      - scripts/qualify_video_audio_runtime.sh
+    notes: "CI and disposable-emulator diagnostics exist, but accepted privacy-minimized GoreeCloud Observability runtime health, metrics/events, dependency-health, provenance/freshness, alerting, representative-device telemetry, and production acceptance are not established."
 
 health:
   health_endpoint: null
@@ -88,23 +114,26 @@ continuity:
 external_dependencies: []
 
 compatibility:
-  platform_contract: "0.2"
-  glaze_ui_required: "1.5.0"
-  requires: []
-  provides: []
+  platform_contract: "0.4"
+  glaze_ui_required: "1.6.0"
+  requires:
+    - goreecloud-platform-contract==0.4
+    - glaze-ui==1.6.0
+  provides:
+    - goreecloud-camera-android-concept-v1
 
 evidence:
   acceptance_tests: []
   release: []
 
 conformance:
-  status: unverified
+  status: nonconformant
   validated_at: null
   evidence: []
   blockers:
     - "No supported physical-device Camera preview or still-capture qualification evidence exists."
-    - "Basic video/audio capture is not implemented."
-    - "No application-specific Platform System integration acceptance evidence exists."
-    - "The engineering Camera shell has not implemented or accepted the current Stable Glaze UI 1.5.0 contract."
+    - "Android 16 emulator video/audio qualification exists on the current candidate, but physical-device/OEM video/audio, microphone routing/quality, thermal, power, and camera-quirk acceptance remain unestablished."
+    - "No application-specific acceptance exists for the nine Integral Platform Systems; Policy and Observability are explicitly evaluated as applicable-blocked under Contract 0.4."
+    - "The engineering Camera shell has not implemented or accepted current Official Stable GLAZE UI V1.6 / 1.6.0."
     - "No release or production-acceptance evidence exists."
     - "A recognized open-source repository license has not yet been selected."

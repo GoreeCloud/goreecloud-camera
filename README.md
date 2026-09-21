@@ -8,11 +8,11 @@ GoreeCloud Camera is the first-party photography, video, scanning, and creative-
 
 ## Current state
 
-The authoritative foundation is a native Android Camera2 implementation. Representative Android 16 / API 36 virtual-camera qualification has verified the preview path and one bounded JPEG still-capture + MediaStore publication path. This is representative-emulator evidence only and does not qualify a physical device.
+The current stacked candidate is a native Android Camera2 implementation. Representative Android 16 / API 36 emulator qualification has verified preview, bounded JPEG still capture + MediaStore publication, and the explicit microphone-permission video/audio path through a published non-empty MP4 with H.264 video, AAC audio, non-trivial duration, and preview restoration. This is representative-emulator evidence only and does not qualify a physical device, OEM camera/audio path, microphone signal quality, production UI, or release readiness.
 
 Authoritative `main` now also includes the first bounded video/audio **source and build** foundation from PR #8, merged as signed commit `f6d414049f6ad4792a70da00903fead403dde58c`. It adds capability-gated Camera2/MediaRecorder MP4 recording using H.264 video and AAC microphone audio, deterministic UTC MP4 naming, pending MediaStore publication/cleanup, explicit recording state, microphone hardware gating, and just-in-time microphone permission requested only after a deliberate Record-video action. Exact PR-head Android Foundation run `35101834080` and Platform Contract run `35101835061` passed.
 
-The Android emulator gate used for PR #8 re-qualified the existing preview/JPEG path only. It did **not** exercise video recording, audio capture, or microphone routing. Video/audio runtime support therefore remains unqualified.
+PR #12 re-qualifies the corrected current candidate after the MediaStore finalization fix. Exact head `194ae7626d1e1a67f2a0b45719987e52e14ca343` passed Platform Contract #49 / run `35643946740` and Android Foundation #47 / run `35643945957`; that Android run passed source/build validation, preview/JPEG qualification, and the separate video/audio emulator lane. The result remains Development/Concept emulator evidence rather than physical-device/OEM acceptance.
 
 The release lifecycle remains **Concept**. Emulator success, source presence, and a buildable APK do not establish supported devices, production UI acceptance, or release readiness.
 
@@ -35,8 +35,7 @@ The release lifecycle remains **Concept**. Emulator success, source presence, an
 
 ## Still open
 
-- video/audio runtime qualification and microphone-routing evidence on an audio-capable representative target;
-- physical-device preview, still, and video/audio qualification;
+- physical-device preview, still, video/audio, microphone-route/signal-quality, OEM, thermal, power, and camera-quirk qualification;
 - local settings foundation;
 - zoom/focus/exposure and lens-switching controls;
 - robust process-death/interrupted-capture and interrupted-recording recovery;
@@ -63,10 +62,10 @@ Core capture remains local and offline-first. Android 10+ MediaStore lets Camera
 
 ## GoreeCloud platform direction
 
-- Platform Contract: **0.2**.
-- Current required Glaze UI consumer target: **1.5.0**.
-- Seven Integral Platform Systems are evaluated explicitly: GoreeCloud Manager, Privacy Shield, Wardveil Security, Everkeep, Glaze UI, GoreeCloud Mesh, and GoreeCloud Identity.
-- GoreeCloud Sync remains separately governed and is not an eighth Integral Platform System.
+- Platform Contract target for this candidate: **0.4**.
+- Current required GLAZE UI consumer target: **1.6.0**.
+- Nine Integral Platform Systems are evaluated explicitly: GoreeCloud Manager, Privacy Shield, Wardveil Security, Everkeep, Glaze UI, GoreeCloud Mesh, GoreeCloud Identity, GoreeCloud Policy, and GoreeCloud Observability.
+- GoreeCloud Sync remains separately governed and is not a tenth Integral Platform System.
 
 ## Repository documentation
 
@@ -88,4 +87,4 @@ A recognized open-source license has not yet been selected and committed. Reposi
 
 ## Status integrity
 
-The current work does not prove Experimental lifecycle eligibility, physical-device support, video/audio runtime support, Glaze UI conformance, Privacy Shield acceptance, Wardveil acceptance, production readiness, or Stable status.
+The current work does not prove Experimental lifecycle eligibility, physical-device/OEM support, GLAZE UI V1.6 application conformance, any Integral Platform System runtime acceptance, production readiness, or Stable status.
