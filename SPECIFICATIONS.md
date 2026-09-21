@@ -127,7 +127,7 @@ The implementation uses direct **Camera2** APIs for preview, capability discover
 
 ### 4.3 User-interface direction
 
-The current activity is an **engineering capture shell**, not an accepted GoreeCloud Camera user experience. The production UI must use the current approved Stable GoreeCloud Glaze UI contract. Portfolio authority is currently **Glaze UI 1.5.0**. No Glaze UI conformance is claimed by the current engineering shell.
+The current activity is an **engineering capture shell**, not an accepted GoreeCloud Camera user experience. The production UI must use the current approved Stable GoreeCloud Glaze UI contract. Current Official Stable consumer authority is **GLAZE UI V1.6 / 1.6.0** at accepted release source `a7180679ea851389e0f3004515f9a25f420e716d`. No repository-local Glaze implementation or application conformance is claimed by the current engineering shell.
 
 Unsupported hardware capabilities must remain hidden or unavailable rather than being advertised from theoretical API support.
 
@@ -286,9 +286,9 @@ These controls do not constitute Wardveil Security acceptance.
 
 ## 13. GoreeCloud Platform Contract
 
-The repository declares **Platform Contract 0.2** and exactly seven Integral Platform Systems. The current approved Stable Glaze UI consumer target is **1.5.0**; Camera remains `applicable-blocked` and has no application-specific Glaze acceptance.
+The current candidate declares **Platform Contract 0.4** and exactly nine Integral Platform Systems. Current Official Stable GLAZE UI consumer authority is **V1.6 / 1.6.0**; the engineering shell remains `applicable-migration-required` for Glaze because it has no repository-local V1.6 implementation or application acceptance.
 
-All seven remain **applicable-blocked** at this milestone because application-specific runtime acceptance evidence does not exist:
+The nine systems are explicitly evaluated and remain blocked, migration-required, or otherwise unaccepted at this milestone:
 
 1. GoreeCloud Manager
 2. Privacy Shield
@@ -297,10 +297,12 @@ All seven remain **applicable-blocked** at this milestone because application-sp
 5. Glaze UI
 6. GoreeCloud Mesh
 7. GoreeCloud Identity
+8. GoreeCloud Policy
+9. GoreeCloud Observability
 
-Camera preview/still/video source evidence is relevant product implementation evidence but does not satisfy any Platform System acceptance contract on its own.
+Camera preview/still/video source and emulator evidence is relevant product implementation evidence but does not satisfy any Platform System acceptance contract on its own. Policy and Observability are now explicitly evaluated rather than being omitted by the superseded seven-system model.
 
-GoreeCloud Sync is separately governed and must not appear as an eighth `platform_systems` key. If Camera later uses Sync, synchronization authorization, datasets, version/change model, conflicts, replication, offline resume, and cross-device behavior must be documented separately.
+GoreeCloud Sync is separately governed and must not appear as a tenth `platform_systems` key. If Camera later uses Sync, synchronization authorization, datasets, version/change model, conflicts, replication, offline resume, and cross-device behavior must be documented separately.
 
 ## 14. Accessibility
 
@@ -340,7 +342,7 @@ Tracked configuration must contain no reusable secrets. User preferences, device
 
 The current engineering shell exposes non-persistent session state, a coarse camera-count capability summary, bounded photo-saved/failure status, video capability state, microphone requirement state, and recording start/stop/finalization status. No telemetry or remote diagnostics are implemented.
 
-CI runtime qualification captures local disposable-emulator evidence including UI hierarchy, screenshot, CameraService state, package/app-ops state, MediaStore query results, logcat, provenance, and—when the still-capture gate succeeds—the captured JPEG payload for signature verification. Current CI runtime evidence does **not** capture or qualify video/audio behavior.
+CI runtime qualification captures local disposable-emulator evidence including UI hierarchy, screenshot, CameraService state, package/app-ops state, MediaStore query results, logcat, provenance, and—when the still-capture gate succeeds—the captured JPEG payload for signature verification. Current stacked PR #12 CI includes a separate Android 16 video/audio emulator lane that verifies an explicit microphone-permission flow, non-empty published MP4, H.264 video, AAC audio, non-trivial duration, and preview restoration. That evidence remains disposable-emulator Development/Concept evidence and does not qualify physical-device/OEM capture or microphone signal quality.
 
 Future diagnostics may record privacy-safe structured events such as session lifecycle, mode, capability decisions, encoder configuration, thermal/storage state classes, error codes, recovery outcomes, and timing metrics.
 
