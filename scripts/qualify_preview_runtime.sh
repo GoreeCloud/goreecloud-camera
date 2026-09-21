@@ -22,6 +22,61 @@ dump_window() {
   adb pull /sdcard/goreecloud-camera-window.xml "$EVIDENCE_ROOT/window.xml" >/dev/null 2>&1 || true
 }
 
+dismiss_external_system_anr_dialog() {
+  dump_window
+
+  local tap_coordinates
+  tap_coordinates="$(
+    python3 - "$EVIDENCE_ROOT/window.xml" <<'PY' || true
+import re
+import sys
+import xml.etree.ElementTree as ET
+
+try:
+    root = ET.parse(sys.argv[1]).getroot()
+except Exception:
+    raise SystemExit(0)
+
+alert_title = None
+close_button = None
+
+for node in root.iter("node"):
+    package_name = node.attrib.get("package")
+    resource_id = node.attrib.get("resource-id")
+    text = node.attrib.get("text", "")
+
+    if package_name == "android" and resource_id == "android:id/alertTitle":
+        alert_title = text
+
+    if (
+        package_name == "android"
+        and resource_id == "android:id/aerr_close"
+        and node.attrib.get("clickable") == "true"
+        and node.attrib.get("enabled") == "true"
+    ):
+        close_button = node
+
+if not alert_title or not alert_title.endswith(" isn't responding") or close_button is None:
+    raise SystemExit(0)
+
+bounds = close_button.attrib.get("bounds", "")
+match = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", bounds)
+if not match:
+    raise SystemExit(0)
+
+x1, y1, x2, y2 = map(int, match.groups())
+print((x1 + x2) // 2, (y1 + y2) // 2)
+PY
+  )"
+
+  if [ -n "$tap_coordinates" ]; then
+    read -r tap_x tap_y <<<"$tap_coordinates"
+    echo "Dismissing unrelated Android system ANR dialog before Camera qualification: x=$tap_x y=$tap_y"
+    adb shell input tap "$tap_x" "$tap_y" || true
+    sleep 1
+  fi
+}
+
 capture_evidence() {
   local status=$?
   set +e
@@ -80,6 +135,7 @@ adb shell wm dismiss-keyguard || true
 adb shell am start -W -n "$ACTIVITY"
 
 for attempt in $(seq 1 45); do
+  dismiss_external_system_anr_dialog
   dump_window
   if grep -q 'text="Session: previewing' "$EVIDENCE_ROOT/window.xml" 2>/dev/null; then
     preview_ready=1
