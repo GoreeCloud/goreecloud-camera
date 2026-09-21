@@ -23,7 +23,7 @@ A photo destination is first reserved as an `IS_PENDING` MediaStore image under 
 
 A video destination is reserved as a pending MediaStore video under `DCIM/GoreeCloud Camera`. The source/build implementation records MP4 using H.264 video and AAC microphone audio, then publishes only after recorder finalization and a non-zero MediaStore size check. Handled preparation, recording, stop, or finalization failures discard the pending row where the process remains alive.
 
-The current Android emulator gate does not exercise video/audio recording or microphone routing. These behaviors are therefore not yet runtime-qualified.
+PR #12 exact-head Android 16 emulator qualification exercises the explicit microphone-permission video/audio path and verifies a non-empty published MP4 with H.264 video, AAC audio, non-trivial duration, and preview restoration. This does not establish physical-device/OEM microphone routing, signal quality, production privacy acceptance, or supported-device claims.
 
 ## Network, location, accounts, and downstream services
 
