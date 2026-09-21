@@ -3,7 +3,7 @@
 > Repository document version: **0.4.0**  
 > Product internal version: **0.1.0**  
 > Release lifecycle: **Concept**  
-> Runtime security status: **Bounded session/media-finalization controls implemented; video/audio runtime and Wardveil acceptance pending**
+> Runtime security status: **Bounded session/media-finalization controls implemented; Android 16 emulator video/audio qualified; physical-device/OEM and Wardveil acceptance pending**
 
 ## Current status
 
@@ -27,7 +27,7 @@ Process-death recovery, storage exhaustion handling, transactional journaling, i
 
 ## Recording security boundary
 
-The current source/build implementation gates video recording on a compatible bounded video output, microphone hardware, camera readiness, and microphone permission. The engineering UI exposes active microphone state during recording. No claim is made that microphone routing or video/audio capture has passed runtime qualification; that remains a separate acceptance gate.
+The current source/build implementation gates video recording on a compatible bounded video output, microphone hardware, camera readiness, and microphone permission. The engineering UI exposes active microphone state during recording. PR #12 exact-head Android 16 emulator qualification verifies the bounded video/audio path at the emulator level. No claim is made for physical-device/OEM microphone routing or signal quality, sustained recording, thermal/power behavior, or production security acceptance.
 
 ## Planned security boundaries
 
